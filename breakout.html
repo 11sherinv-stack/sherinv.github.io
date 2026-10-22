@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>بریک‌اوت</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.25rem}
+.hud{display:flex;gap:8px;margin-bottom:6px}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:3px 12px;text-align:center;font-size:.7rem;color:var(--muted)}
+.hud b{display:block;font-size:1rem;color:var(--ink)}
+.wrap{position:relative}
+canvas{display:block;height:min(calc(100svh - 150px),520px);aspect-ratio:360/520;width:auto;max-width:96vw;border-radius:10px;touch-action:none}
+.over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,12,18,.78);color:#fff;border-radius:10px;text-align:center;padding:14px}
+.over h2{margin:0}.over p{margin:0;line-height:1.8;font-size:.9rem;opacity:.9}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:10px;padding:10px 24px;cursor:pointer}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.hint{color:var(--muted);font-size:.76rem;margin-top:6px;text-align:center}
+</style>
+</head>
+<body>
+<h1>🧱 بریک‌اوت</h1>
+<div class="hud"><div>امتیاز<b id="sc">۰</b></div><div>جان<b id="lv">❤️❤️❤️</b></div><div>مرحله<b id="lvl">۱</b></div><div>رکورد<b id="bs">۰</b></div></div>
+<div class="wrap"><canvas id="c" width="360" height="520"></canvas>
+<div class="over" id="over"><h2 id="ti">بریک‌اوت</h2><p id="ms">با کشیدن انگشت، راکت را حرکت بده و همه‌ی آجرها را بشکن.<br>کپسول‌ها: W راکت بزرگ · M سه توپ · S کند · L جان</p><button id="go">شروع</button></div></div>
+<div class="hint">موس یا انگشت: حرکت راکت · لمس/کلیک/فاصله: پرتاب توپ · کلیدهای ← →</div>
+<script>
+const W=360,H=520,BR=7,COLS=9,BW=36,BH=16,OX=18,OY=70;
+const $=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d'),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+let st='idle',score=0,lives=3,lvl=1,best=0,pad,balls=[],bricks=[],pups=[],parts=[],wideT=0,slowT=0,msgT=0,msg='',last=0,au,kl=0,kr=0;
+try{best=+localStorage.getItem('breakout-best')||0}catch(e){}
+function beep(f,d=.05,ty='square'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.03;o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const speed=()=>Math.min(520,300+lvl*22)*(slowT>0?.7:1);
+function build(){
+  bricks=[];const rows=5+Math.min(lvl,3),p=lvl%4;
+  for(let r=0;r<rows;r++)for(let c=0;c<COLS;c++){
+    if(p===1&&(r+c)%2)continue;
+    if(p===2&&Math.abs(c-4)>(rows-r)+1)continue;
+    if(p===3&&c%3===1&&r>1)continue;
+    bricks.push({x:OX+c*BW,y:OY+r*(BH+4),hp:(r<2&&lvl>1)?2:1,h:(r*38+lvl*25)%360});
+  }
+}
+function resetBall(){balls=[{x:pad.x+pad.w/2,y:pad.y-BR-1,vx:0,vy:0,stuck:true}]}
+function start(){score=0;lives=3;lvl=1;wideT=0;slowT=0;pups=[];parts=[];pad={x:W/2-35,y:H-40,w:70};build();resetBall();st='play';$('over').style.display='none';hud()}
+function launch(){balls.forEach(b=>{if(b.stuck){b.stuck=false;const s=speed();b.vx=s*.35*(Math.random()<.5?-1:1);b.vy=-s*.94;beep(500,.06)}})}
+function burst(px,py,h){for(let i=0;i<8;i++)parts.push({x:px,y:py,vx:(Math.random()-.5)*180,vy:(Math.random()-.5)*180,l:.4,h})}
+function hit(k){
+  k.hp--;beep(260+k.h%5*40,.04);
+  if(k.hp<=0){bricks.splice(bricks.indexOf(k),1);score+=10*lvl;burst(k.x+BW/2,k.y+BH/2,k.h);
+    if(Math.random()<.14){const ty='WMSL'[Math.floor(Math.random()*4)];pups.push({x:k.x+BW/2,y:k.y,t:ty})}}
+}
+function over(){st='over';$('ti').textContent='بازی تمام شد';
+  if(score>best){best=score;try{localStorage.setItem('breakout-best',best)}catch(e){}}
+  $('ms').innerHTML='امتیاز: '+fa(score)+' · مرحله: '+fa(lvl);$('go').textContent='دوباره';$('over').style.display='flex';beep(140,.4,'sawtooth')}
+function update(dt){
+  pad.x+=(kr-kl)*430*dt;
+  const tw=wideT>0?112:70;pad.w+=(tw-pad.w)*Math.min(1,dt*8);
+  pad.x=Math.max(0,Math.min(W-pad.w,pad.x));
+  wideT=Math.max(0,wideT-dt);slowT=Math.max(0,slowT-dt);msgT=Math.max(0,msgT-dt);
+  const sp=speed();
+  for(let s=0;s<3;s++){
+    const sd=dt/3;
+    balls.forEach(b=>{
+      if(b.stuck){b.x=pad.x+pad.w/2;b.y=pad.y-BR-1;return}
+      const m=Math.hypot(b.vx,b.vy)||1;b.vx*=sp/m;b.vy*=sp/m;
+      b.x+=b.vx*sd;b.y+=b.vy*sd;
+      if(b.x<BR){b.x=BR;b.vx=Math.abs(b.vx)}if(b.x>W-BR){b.x=W-BR;b.vx=-Math.abs(b.vx)}if(b.y<BR+4){b.y=BR+4;b.vy=Math.abs(b.vy)}
+      if(b.vy>0&&b.y+BR>=pad.y&&b.y-BR<=pad.y+12&&b.x>=pad.x-BR&&b.x<=pad.x+pad.w+BR){
+        const a=(b.x-(pad.x+pad.w/2))/(pad.w/2+BR)*1.1,m2=Math.hypot(b.vx,b.vy);
+        b.vx=m2*Math.sin(a);b.vy=-m2*Math.cos(a);b.y=pad.y-BR;beep(380,.04);
+      }
+      for(const k of bricks){
+        if(b.x+BR<k.x||b.x-BR>k.x+BW||b.y+BR<k.y||b.y-BR>k.y+BH)continue;
+        const ox=Math.min(b.x+BR-k.x,k.x+BW-(b.x-BR)),oy=Math.min(b.y+BR-k.y,k.y+BH-(b.y-BR));
+        if(ox<oy)b.vx=(b.x<k.x+BW/2?-1:1)*Math.abs(b.vx);else b.vy=(b.y<k.y+BH/2?-1:1)*Math.abs(b.vy);
+        hit(k);break;
+      }
+    });
+  }
+  balls=balls.filter(b=>b.y<H+12);
+  if(!balls.length){lives--;hud();beep(180,.25,'sawtooth');if(lives<=0)return over();wideT=0;resetBall()}
+  pups.forEach(p=>{p.y+=110*dt;
+    if(p.y>pad.y-6&&p.y<pad.y+16&&p.x>pad.x-8&&p.x<pad.x+pad.w+8){p.dead=1;beep(800,.12,'triangle');
+      if(p.t==='W')wideT=10;else if(p.t==='S')slowT=8;else if(p.t==='L')lives=Math.min(5,lives+1);
+      else{const src=balls.find(b=>!b.stuck)||balls[0];for(let i=0;i<2;i++)balls.push({x:src.x,y:src.y,vx:(i?1:-1)*sp*.5,vy:-sp*.85,stuck:false})}hud()}});
+  pups=pups.filter(p=>!p.dead&&p.y<H+10);
+  parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt});parts=parts.filter(p=>p.l>0);
+  if(!bricks.length&&st==='play'){lvl++;build();resetBall();pups=[];msg='مرحله '+fa(lvl);msgT=1.6;beep(900,.25,'triangle');hud()}
+}
+function hud(){$('sc').textContent=fa(score);$('lv').textContent='❤️'.repeat(Math.max(0,lives))||'—';$('lvl').textContent=fa(lvl);$('bs').textContent=fa(Math.max(best,score))}
+const PC={W:'#4fa3ff',M:'#ff8a3d',S:'#7be26a',L:'#ff5c8a'};
+function draw(){
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#1a2342');g.addColorStop(1,'#0c1226');x.fillStyle=g;x.fillRect(0,0,W,H);
+  bricks.forEach(k=>{x.fillStyle='hsl('+k.h+',70%,'+(k.hp>1?40:55)+'%)';x.beginPath();x.roundRect(k.x+1,k.y+1,BW-2,BH-2,4);x.fill();x.fillStyle='rgba(255,255,255,.25)';x.fillRect(k.x+3,k.y+3,BW-6,3);if(k.hp>1){x.strokeStyle='#fff';x.lineWidth=1.5;x.strokeRect(k.x+3,k.y+3,BW-6,BH-6)}});
+  pups.forEach(p=>{x.fillStyle=PC[p.t];x.beginPath();x.roundRect(p.x-12,p.y-8,24,16,8);x.fill();x.fillStyle='#fff';x.font='bold 12px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(p.t,p.x,p.y+1)});
+  if(pad){x.fillStyle=wideT>0?'#4fa3ff':'#e8ecf3';x.beginPath();x.roundRect(pad.x,pad.y,pad.w,12,6);x.fill()}
+  balls.forEach(b=>{x.fillStyle='#fff';x.shadowColor='#7fe0ff';x.shadowBlur=10;x.beginPath();x.arc(b.x,b.y,BR,0,7);x.fill();x.shadowBlur=0});
+  parts.forEach(p=>{x.globalAlpha=Math.max(0,p.l*2.5);x.fillStyle='hsl('+p.h+',80%,60%)';x.fillRect(p.x,p.y,4,4)});x.globalAlpha=1;
+  if(slowT>0||wideT>0){x.fillStyle='#fff9';x.font='11px sans-serif';x.textAlign='left';x.textBaseline='alphabetic';x.fillText((wideT>0?'W ':'')+(slowT>0?'S':''),8,H-8)}
+  if(msgT>0){x.fillStyle='#fff';x.font='bold 28px sans-serif';x.textAlign='center';x.textBaseline='middle';x.globalAlpha=Math.min(1,msgT);x.fillText(msg,W/2,H/2);x.globalAlpha=1}
+}
+function loop(t){const dt=Math.min(.04,(t-last)/1000||0);last=t;if(st==='play'){update(dt);hud()}draw();requestAnimationFrame(loop)}
+function mv(e){if(st!=='play'||!pad)return;const r=cv.getBoundingClientRect();pad.x=Math.max(0,Math.min(W-pad.w,(e.clientX-r.left)/r.width*W-pad.w/2))}
+cv.addEventListener('pointermove',mv);
+cv.addEventListener('pointerdown',e=>{e.preventDefault();mv(e);if(st==='play')launch()});
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a')kl=1;else if(e.key==='ArrowRight'||e.key==='d')kr=1;
+  else if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();if(st==='play')launch();else $('go').click()}
+});
+addEventListener('keyup',e=>{if(e.key==='ArrowLeft'||e.key==='a')kl=0;else if(e.key==='ArrowRight'||e.key==='d')kr=0});
+$('go').onclick=()=>{if(st==='pause'){st='play';$('over').style.display='none'}else start()};$('bs').textContent=fa(best);
+pad={x:W/2-35,y:H-40,w:70};build();resetBall();
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='play'){st='pause';$('ti').textContent='متوقف شد';$('ms').textContent='برای ادامه دکمه را بزن.';$('go').textContent='ادامه';$('over').style.display='flex'}});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

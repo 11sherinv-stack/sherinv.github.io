@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>شطرنج</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;--head:#4a5a2a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--head:#8aa05a}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--head:#8aa05a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center}
+select,button{font:inherit;border-radius:8px;padding:7px 10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+button:focus-visible,select:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#stt{min-height:1.7em;font-weight:700;margin:6px 0}
+#bd{display:grid;grid-template-columns:repeat(8,1fr);width:min(94vw,480px);aspect-ratio:1;border:3px solid var(--head);border-radius:6px;direction:ltr;--w:min(94vw,480px);overflow:hidden}
+.sq{display:grid;place-items:center;position:relative;cursor:pointer}
+.l{background:#e9edcc}.d{background:#779556}
+.sq.s{background:#f6f669}
+.sq.lm{box-shadow:inset 0 0 0 100px rgba(255,235,59,.38)}
+.sq.ck{background:radial-gradient(circle,#ff5252 20%,transparent 75%),#779556}
+.sq.mv::after{content:"";position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(0,0,0,.22)}
+.sq.cap::after{content:"";position:absolute;inset:4%;border-radius:50%;border:4px solid rgba(0,0,0,.3)}
+.pc{font-size:calc(var(--w) / 8 * .78);line-height:1;position:relative;z-index:1}
+.pc.w{color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,0 1px 2px #000}
+.pc.b{color:#161616;text-shadow:0 0 2px rgba(255,255,255,.5)}
+.hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center}
+</style>
+</head>
+<body>
+<h1>♟️ شطرنج</h1>
+<div class="row">
+  <select id="mode" aria-label="حالت"><option value="ai">مقابل کامپیوتر</option><option value="2p">دو نفره</option></select>
+  <select id="lvl" aria-label="سطح"><option value="1">آسان</option><option value="2" selected>متوسط</option><option value="3">سخت</option></select>
+  <select id="col" aria-label="رنگ تو"><option value="w">تو سفید</option><option value="b">تو سیاه</option></select>
+</div>
+<div class="row"><button class="pr" id="nw">بازی جدید</button><button id="un">↶ برگشت</button><button id="fl">🔄 چرخش</button></div>
+<div id="stt"></div>
+<div id="bd"></div>
+<div class="hint">روی مهره بزن تا حرکت‌های مجاز نشان داده شود · قانون‌ها: قلعه‌شدن، آنپاسان، ارتقای پیاده (به وزیر)</div>
+<script>
+const $=i=>document.getElementById(i),bd=$('bd');
+const GL={K:'♚',Q:'♛',R:'♜',B:'♝',N:'♞',P:'♟\uFE0E'};
+const KN=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]],DIR=[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+const V={P:100,N:320,B:330,R:500,Q:900,K:0};
+let b,turn,ca,ep,hist,sel=-1,moves=[],mode='ai',level=2,human='w',over=false,last=null,flip=false,busy=false,au;
+const side=p=>p?(p===p.toUpperCase()?'w':'b'):'';
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function init(){
+  b=Array(64).fill('');'rnbqkbnr'.split('').forEach((p,i)=>{b[i]=p;b[56+i]=p.toUpperCase();b[8+i]='p';b[48+i]='P'});
+  turn='w';ca={K:1,Q:1,k:1,q:1};ep=-1;hist=[];sel=-1;moves=[];over=false;last=null;busy=false;
+}
+function att(sq,by){
+  const r=sq>>3,c=sq&7,w=by==='w',pr=w?r+1:r-1;
+  if(pr>=0&&pr<8)for(const dc of[-1,1]){const cc=c+dc;if(cc>=0&&cc<8&&b[pr*8+cc]===(w?'P':'p'))return true}
+  for(const[dr,dc]of KN){const rr=r+dr,cc=c+dc;if(rr>=0&&rr<8&&cc>=0&&cc<8&&b[rr*8+cc]===(w?'N':'n'))return true}
+  for(const[dr,dc]of DIR){
+    let rr=r+dr,cc=c+dc,first=true;
+    while(rr>=0&&rr<8&&cc>=0&&cc<8){
+      const p=b[rr*8+cc];
+      if(p){if(side(p)===by){const u=p.toUpperCase(),dg=dr&&dc;if(u==='Q'||(dg?u==='B':u==='R')||(first&&u==='K'))return true}break}
+      rr+=dr;cc+=dc;first=false;
+    }
+  }
+  return false;
+}
+function gen(s){
+  const out=[],w=s==='w',add=(f,t,o)=>out.push({f,t,...o});
+  for(let i=0;i<64;i++){
+    const p=b[i];if(!p||side(p)!==s)continue;
+    const u=p.toUpperCase(),r=i>>3,c=i&7;
+    if(u==='P'){
+      const d=w?-1:1,sr=w?6:1,lr=w?0:7,t=i+d*8,pr=(r+d===lr)?{pr:1}:{};
+      if(b[t]===''){add(i,t,pr);if(r===sr&&b[t+d*8]==='')add(i,t+d*8,{dp:1})}
+      for(const dc of[-1,1]){const cc=c+dc;if(cc<0||cc>7)continue;const tt=t+dc;
+        if(b[tt]&&side(b[tt])!==s)add(i,tt,pr);else if(tt===ep&&!b[tt])add(i,tt,{ep:1})}
+    }else if(u==='N'){
+      for(const[dr,dc]of KN){const rr=r+dr,cc=c+dc;if(rr<0||rr>7||cc<0||cc>7)continue;const t=rr*8+cc;if(side(b[t])!==s)add(i,t)}
+    }else{
+      const dirs=u==='B'?DIR.slice(4):u==='R'?DIR.slice(0,4):DIR,one=u==='K';
+      for(const[dr,dc]of dirs){let rr=r+dr,cc=c+dc;
+        while(rr>=0&&rr<8&&cc>=0&&cc<8){const t=rr*8+cc;if(side(b[t])===s)break;add(i,t);if(b[t]||one)break;rr+=dr;cc+=dc}}
+      if(one){
+        const o=w?'b':'w',row=w?56:0,K=w?'K':'k',Q=w?'Q':'q',R=w?'R':'r';
+        if(i===row+4&&!att(i,o)){
+          if(ca[K]&&!b[row+5]&&!b[row+6]&&b[row+7]===R&&!att(row+5,o)&&!att(row+6,o))add(i,row+6,{cs:'K'});
+          if(ca[Q]&&!b[row+3]&&!b[row+2]&&!b[row+1]&&b[row]===R&&!att(row+3,o)&&!att(row+2,o))add(i,row+2,{cs:'Q'});
+        }
+      }
+    }
+  }
+  return out;
+}
+function make(m){
+  const p=b[m.f],u={m,p,cap:b[m.t],ep,ca:{...ca}},w=side(p)==='w';
+  b[m.t]=p;b[m.f]='';
+  if(m.ep){u.epc=m.t+(w?8:-8);u.epp=b[u.epc];b[u.epc]=''}
+  if(m.pr)b[m.t]=w?'Q':'q';
+  if(m.cs){const r=w?56:0;if(m.cs==='K'){b[r+5]=b[r+7];b[r+7]=''}else{b[r+3]=b[r];b[r]=''}}
+  ep=m.dp?(m.f+m.t)/2:-1;
+  if(p==='K')ca.K=ca.Q=0;if(p==='k')ca.k=ca.q=0;
+  for(const s of[m.f,m.t]){if(s===63)ca.K=0;if(s===56)ca.Q=0;if(s===7)ca.k=0;if(s===0)ca.q=0}
+  return u;
+}
+function unmake(u){
+  const m=u.m,w=side(u.p)==='w';
+  b[m.f]=u.p;b[m.t]=u.cap;
+  if(m.ep)b[u.epc]=u.epp;
+  if(m.cs){const r=w?56:0;if(m.cs==='K'){b[r+7]=b[r+5];b[r+5]=''}else{b[r]=b[r+3];b[r+3]=''}}
+  ep=u.ep;ca=u.ca;
+}
+const kingSq=s=>b.indexOf(s==='w'?'K':'k');
+const inCheck=s=>att(kingSq(s),s==='w'?'b':'w');
+function legal(s){return gen(s).filter(m=>{const u=make(m),ok=!inCheck(s);unmake(u);return ok})}
+function ev(){
+  let s=0;
+  for(let i=0;i<64;i++){
+    const p=b[i];if(!p)continue;
+    const u=p.toUpperCase(),r=i>>3,c=i&7,w=side(p)==='w';
+    let v=V[u];const cen=7-Math.abs(c-3.5)-Math.abs(r-3.5);
+    if(u==='N'||u==='B')v+=cen*6;else if(u==='P')v+=(w?6-r:r-1)*8+cen*2;
+    s+=w?v:-v;
+  }
+  return s;
+}
+const capv=m=>b[m.t]?V[b[m.t].toUpperCase()]:0;
+function search(d,al,be,s){
+  const ms=legal(s);
+  if(!ms.length)return inCheck(s)?(s==='w'?-99999-d:99999+d):0;
+  if(d===0)return ev();
+  ms.sort((p,q)=>capv(q)-capv(p));
+  const w=s==='w',o=w?'b':'w';
+  let best=w?-1e9:1e9;
+  for(const m of ms){
+    const u=make(m),v=search(d-1,al,be,o);unmake(u);
+    if(w){if(v>best)best=v;if(best>al)al=best}else{if(v<best)best=v;if(best<be)be=best}
+    if(al>=be)break;
+  }
+  return best;
+}
+function ai(){
+  busy=true;$('stt').textContent='کامپیوتر فکر می‌کند…';
+  setTimeout(()=>{
+    const s=turn,w=s==='w',ms=legal(s).sort(()=>Math.random()-.5);
+    let best=null,bv=w?-1e9:1e9;
+    for(const m of ms){
+      const u=make(m),jit=Math.random()*(level===1?80:8)-(level===1?40:4);
+      const v=search(level-1,-1e9,1e9,w?'b':'w')+jit;unmake(u);
+      if(w?v>bv:v<bv){bv=v;best=m}
+    }
+    busy=false;if(best)doMove(best);
+  },60);
+}
+function doMove(m){
+  const cap=b[m.t]||m.ep;
+  hist.push(make(m));last={f:m.f,t:m.t};turn=turn==='w'?'b':'w';sel=-1;moves=[];
+  beep(cap?220:360);
+  render();
+  if(!over&&mode==='ai'&&turn!==human)ai();
+}
+function render(){
+  const ms=legal(turn),chk=inCheck(turn);
+  if(!ms.length){over=true;$('stt').textContent=chk?'کیش و مات! '+(turn==='w'?'سیاه':'سفید')+' برنده شد 🏆':'پات! بازی مساوی شد'}
+  else{over=false;$('stt').textContent='نوبت '+(turn==='w'?'سفید':'سیاه')+(chk?' — کیش!':'')}
+  const order=[...Array(64).keys()];if(flip)order.reverse();
+  const ks=chk?kingSq(turn):-1;
+  bd.innerHTML=order.map(i=>{
+    const r=i>>3,c=i&7;let cl='sq '+((r+c)%2?'d':'l');
+    if(i===sel)cl+=' s';
+    if(last&&(i===last.f||i===last.t))cl+=' lm';
+    if(i===ks)cl+=' ck';
+    const mv=moves.find(m=>m.t===i);if(mv)cl+=(b[i]||mv.ep)?' cap':' mv';
+    const p=b[i];
+    return '<div class="'+cl+'" data-i="'+i+'">'+(p?'<span class="pc '+(side(p)==='w'?'w':'b')+'">'+GL[p.toUpperCase()]+'</span>':'')+'</div>';
+  }).join('');
+}
+bd.addEventListener('click',e=>{
+  const el=e.target.closest('.sq');if(!el||over||busy)return;
+  if(mode==='ai'&&turn!==human)return;
+  const i=+el.dataset.i,mv=moves.find(m=>m.t===i);
+  if(sel>=0&&mv)return doMove(mv);
+  if(b[i]&&side(b[i])===turn){sel=i;moves=legal(turn).filter(m=>m.f===i)}else{sel=-1;moves=[]}
+  render();
+});
+function newG(){
+  mode=$('mode').value;level=+$('lvl').value;human=$('col').value;
+  init();flip=mode==='ai'&&human==='b';render();
+  if(mode==='ai'&&turn!==human)ai();
+}
+function undo(){
+  if(busy||!hist.length)return;
+  let n=mode==='ai'?(turn===human?2:1):1;
+  while(n--&&hist.length){unmake(hist.pop());turn=turn==='w'?'b':'w'}
+  const l=hist[hist.length-1];last=l?{f:l.m.f,t:l.m.t}:null;sel=-1;moves=[];over=false;render();
+  if(mode==='ai'&&turn!==human&&!over)ai();
+}
+$('nw').onclick=newG;$('un').onclick=undo;$('fl').onclick=()=>{flip=!flip;render()};
+['mode','lvl','col'].forEach(i=>$(i).onchange=newG);
+newG();
+</script>
+</body>
+</html>

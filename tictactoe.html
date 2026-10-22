@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دوز</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;--x:#14a89b;--o:#e8742a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--x:#2fd5c3;--o:#ffa04d}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--x:#2fd5c3;--o:#ffa04d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 8px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center}
+select,button{font:inherit;border-radius:8px;padding:7px 10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+button:focus-visible,select:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.score{display:flex;gap:10px;margin:8px 0}
+.score div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 16px;text-align:center;font-size:.75rem;color:var(--muted)}
+.score b{display:block;font-size:1.3rem}
+.score .x b{color:var(--x)}.score .o b{color:var(--o)}
+#stt{min-height:1.7em;font-weight:700;margin:4px 0 10px}
+#bd{display:grid;gap:8px;width:min(92vw,400px);aspect-ratio:1;direction:ltr}
+.c{border:0;border-radius:14px;background:var(--card);box-shadow:inset 0 0 0 2px var(--line);font-size:clamp(2rem,16vw,4.2rem);font-weight:800;line-height:1;padding:0;color:var(--ink);transition:transform .12s,background .2s}
+.c:active:not(:disabled){transform:scale(.94)}
+.c.X{color:var(--x)}.c.O{color:var(--o)}
+.c.win{background:rgba(217,242,74,.55);animation:pl .5s ease-in-out 3}
+@keyframes pl{50%{transform:scale(1.08)}}
+.hint{color:var(--muted);font-size:.76rem;margin-top:10px;text-align:center}
+</style>
+</head>
+<body>
+<h1>❌⭕ دوز</h1>
+<div class="row">
+  <select id="mode" aria-label="حالت"><option value="ai">مقابل کامپیوتر</option><option value="2p">دو نفره</option></select>
+  <select id="size" aria-label="اندازه"><option value="3">۳×۳</option><option value="4">۴×۴ (چهارتایی)</option></select>
+  <select id="lvl" aria-label="سطح"><option value="1">آسان</option><option value="2" selected>متوسط</option><option value="3">سخت</option></select>
+  <select id="sym" aria-label="نماد"><option value="X">تو X</option><option value="O">تو O</option></select>
+</div>
+<div class="score"><div class="x">X<b id="sx">۰</b></div><div>مساوی<b id="sd">۰</b></div><div class="o">O<b id="so">۰</b></div></div>
+<div id="stt"></div>
+<div id="bd"></div>
+<div class="row" style="margin-top:12px"><button class="pr" id="nw">دور جدید</button><button id="rs">ریست امتیاز</button></div>
+<div class="hint">۳×۳: سه تا در یک ردیف · ۴×۴: چهارتا در یک ردیف · سطح «سخت» در ۳×۳ شکست‌ناپذیر است</div>
+<script>
+const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+let N=3,K=3,cells,turn,over,mode='ai',lvl=2,human='X',lines,au,sc={X:0,O:0,D:0};
+try{sc=JSON.parse(localStorage.getItem('ttt-score'))||sc}catch(e){}
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function beep(f,d=.08){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function mkLines(){
+  lines=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){
+    const L=[];
+    for(let k=0;k<K;k++){const rr=r+dr*k,cc=c+dc*k;if(rr<0||rr>=N||cc<0||cc>=N){L.length=0;break}L.push(rr*N+cc)}
+    if(L.length===K)lines.push(L);
+  }
+}
+const winner=()=>lines.find(L=>cells[L[0]]&&L.every(i=>cells[i]===cells[L[0]]));
+function mm(pl,me,d){
+  const w=winner();if(w)return cells[w[0]]===me?10-d:d-10;
+  if(cells.every(Boolean))return 0;
+  const op=me==='X'?'O':'X',mx=pl===me;let best=mx?-99:99;
+  for(let i=0;i<9;i++){if(cells[i])continue;cells[i]=pl;const v=mm(mx?op:me,me,d+1);cells[i]='';if(mx?v>best:v<best)best=v}
+  return best;
+}
+function pick(){
+  const free=[...cells.keys()].filter(i=>!cells[i]),me=turn,op=me==='X'?'O':'X';
+  const wins=pl=>free.find(i=>{cells[i]=pl;const w=winner();cells[i]='';return w});
+  if(lvl===1&&Math.random()<.6)return rnd(free);
+  let m=wins(me);if(m!=null)return m;
+  m=wins(op);if(m!=null&&(lvl>1||Math.random()<.5))return m;
+  if(lvl===1||(lvl===2&&Math.random()<.3))return rnd(free);
+  if(N===3&&lvl===3){
+    let bs=-99,bc=[];
+    for(const i of free){cells[i]=me;const v=mm(op,me,1);cells[i]='';if(v>bs){bs=v;bc=[i]}else if(v===bs)bc.push(i)}
+    return rnd(bc);
+  }
+  let bs=-1,bc=[];
+  for(const i of free){
+    let s=0;
+    lines.forEach(L=>{if(!L.includes(i))return;let a=0,o=0;L.forEach(j=>{if(cells[j]===me)a++;else if(cells[j]===op)o++});if(!o)s+=10**a;if(!a)s+=.9*10**o});
+    if(s>bs){bs=s;bc=[i]}else if(s===bs)bc.push(i);
+  }
+  return rnd(bc);
+}
+function save(){try{localStorage.setItem('ttt-score',JSON.stringify(sc))}catch(e){}$('sx').textContent=fa(sc.X);$('so').textContent=fa(sc.O);$('sd').textContent=fa(sc.D)}
+function render(wl){
+  $('bd').innerHTML=cells.map((v,i)=>'<button class="c '+v+(wl&&wl.includes(i)?' win':'')+'" data-i="'+i+'"'+(v||over?' disabled':'')+' aria-label="خانه '+(i+1)+'">'+v+'</button>').join('');
+}
+function status(){
+  if(over)return;
+  const mine=mode==='2p'||turn===human;
+  $('stt').textContent=mode==='2p'?'نوبت '+turn:(mine?'نوبت تو ('+turn+')':'کامپیوتر فکر می‌کند…');
+}
+function play(i){
+  if(over||cells[i])return;
+  cells[i]=turn;beep(turn==='X'?520:380);
+  const w=winner();
+  if(w){over=true;sc[turn]++;save();render(w);
+    $('stt').textContent=mode==='ai'?(turn===human?'🎉 تو بردی!':'😅 کامپیوتر برد'):'🏆 '+turn+' برنده شد';beep(880,.25);return}
+  if(cells.every(Boolean)){over=true;sc.D++;save();render();$('stt').textContent='🤝 مساوی شد';return}
+  turn=turn==='X'?'O':'X';render();status();
+  if(mode==='ai'&&turn!==human)setTimeout(()=>play(pick()),350);
+}
+$('bd').addEventListener('click',e=>{
+  const b=e.target.closest('.c');if(!b)return;
+  if(mode==='ai'&&turn!==human)return;
+  play(+b.dataset.i);
+});
+function round(){
+  mode=$('mode').value;N=+$('size').value;K=N;lvl=+$('lvl').value;human=$('sym').value;
+  $('bd').style.gridTemplateColumns='repeat('+N+',1fr)';
+  mkLines();cells=Array(N*N).fill('');turn='X';over=false;render();status();
+  if(mode==='ai'&&turn!==human)setTimeout(()=>play(pick()),400);
+}
+$('nw').onclick=round;
+$('rs').onclick=()=>{sc={X:0,O:0,D:0};save()};
+['mode','size','lvl','sym'].forEach(i=>$(i).onchange=round);
+save();round();
+</script>
+</body>
+</html>
