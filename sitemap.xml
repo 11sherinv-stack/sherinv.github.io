@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://YOUR-SITE-ADDRESS/</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/snake.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/arena.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/2048.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/tetris.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/dino.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/flappy.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/maze.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/games/sudoku.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/snake.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/arena.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/2048.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/tetris.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/dino.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/flappy.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/maze.html</loc></url>
+<url><loc>https://YOUR-SITE-ADDRESS/sudoku.html</loc></url>
 </urlset>
