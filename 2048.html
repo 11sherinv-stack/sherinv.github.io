@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>۲۰۴۸</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;--board:#c9ced8;--cell:#dde1e8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--board:#2b3040;--cell:#363c4f}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--board:#2b3040;--cell:#363c4f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:12px;user-select:none;-webkit-user-select:none}
+h1{margin:2px 0;font-size:2rem}
+.hud{display:flex;gap:10px;margin:6px 0}
+.hud div{background:var(--card);border-radius:8px;padding:4px 18px;text-align:center;font-size:.75rem;color:var(--muted)}
+.hud b{display:block;font-size:1.2rem;color:var(--ink)}
+.row{display:flex;gap:6px;margin:6px 0 10px;flex-wrap:wrap;justify-content:center}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:8px;padding:8px 14px;cursor:pointer}
+button.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button.on{outline:2px solid var(--btn)}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.board{position:relative;width:min(92vw,420px);aspect-ratio:1;background:var(--board);border-radius:10px;padding:4px;touch-action:none;--n:4}
+#bg,#tl{position:absolute;inset:4px}
+#bg{display:grid}
+.cell{padding:4px}.cell i{display:block;width:100%;height:100%;background:var(--cell);border-radius:6px}
+.t{position:absolute;left:0;top:0;width:calc(100% / var(--n));height:calc(100% / var(--n));padding:4px;transition:transform .12s ease}
+.t i{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:6px;font-weight:700}
+.pp{animation:pop .2s}
+@keyframes pop{0%{scale:.4}60%{scale:1.15}100%{scale:1}}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,12,18,.72);color:#fff;border-radius:10px;text-align:center;z-index:5}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.8rem;margin-top:10px;text-align:center}
+</style>
+</head>
+<body><a href="../index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>۲۰۴۸</h1>
+<div class="hud"><div>امتیاز<b id="sc">۰</b></div><div>رکورد<b id="bs">۰</b></div><div>بلوک برتر<b id="bt">۰</b></div></div>
+<div class="row">
+  <button id="nw">بازی جدید</button><button class="alt" id="un">↶ برگشت</button><button class="alt" id="hb">💡 راهنما</button><button class="alt" id="sv">💾 ذخیره</button>
+  <button class="alt" data-n="4">۴×۴</button><button class="alt" data-n="5">۵×۵</button>
+</div>
+<div class="hint" id="hn" style="min-height:1.4em;margin:0 0 6px;color:var(--btn);font-weight:700"></div><div class="board" id="bd"><div id="bg"></div><div id="tl"></div><div class="ov" id="ov"><h2 id="ot"></h2><div class="row" id="ob"></div></div></div>
+<div class="hint">جهت‌نماها یا WASD · روی صفحه بکش · کاشی‌های هم‌عدد را ترکیب کن</div>
+<script>
+const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+let n=4,tiles=[],score=0,best=0,bestTile=0,hist=[],uid=0,won=false,dead=false;
+const els=new Map(),bd=$('bd'),bg=$('bg'),tl=$('tl'),ov=$('ov');
+const bk=()=>'g2048-best-'+n;
+function setup(){tl.innerHTML='';els.clear();bd.style.setProperty('--n',n);bg.style.gridTemplateColumns='repeat('+n+',1fr)';bg.innerHTML='<div class="cell"><i></i></div>'.repeat(n*n);
+  document.querySelectorAll('[data-n]').forEach(b=>b.classList.toggle('on',+b.dataset.n===n))}
+function hud(){$('sc').textContent=fa(score);const mt=tiles.reduce((m,t)=>Math.max(m,t.v),0);if(score>best){best=score;try{localStorage.setItem(bk(),best)}catch(e){}}if(mt>bestTile){bestTile=mt;try{localStorage.setItem(tk(),bestTile)}catch(e){}}$('bs').textContent=fa(best);$('bt').textContent=fa(bestTile)}
+function add(){
+  const fr=[];for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(!tiles.some(t=>t.r===r&&t.c===c))fr.push([r,c]);
+  if(!fr.length)return;const[r,c]=fr[Math.floor(Math.random()*fr.length)];
+  const t={id:++uid,v:Math.random()<.9?2:4,r,c,pop:1,m:0};tiles.push(t);place(t);
+}
+function place(t){
+  let e=els.get(t.id);const tr='translate('+t.c*100+'%,'+t.r*100+'%)';
+  if(!e){e=document.createElement('div');e.className='t';e.innerHTML='<i></i>';e.style.transition='none';e.style.transform=tr;tl.appendChild(e);els.set(t.id,e);void e.offsetWidth;e.style.transition=''}
+  else e.style.transform=tr;
+  const i=e.firstChild,v=t.v,lg=Math.log2(v),dg=String(v).length;
+  i.textContent=fa(v);
+  i.style.background='hsl('+((lg*40+200)%360)+' 62% '+(v<8?82:v<64?64:50)+'%)';
+  i.style.color=v<8?'#1c2230':'#fff';
+  i.style.fontSize=Math.max(.8,(1.9-.28*(dg-1))*4/n)+'rem';
+  if(t.pop){i.classList.remove('pp');void i.offsetWidth;i.classList.add('pp');t.pop=0}
+}
+function show(txt,btns){$('ot').textContent=txt;$('ob').innerHTML='';btns.forEach(([l,f])=>{const b=document.createElement('button');b.textContent=l;b.onclick=f;$('ob').appendChild(b)});ov.style.display='flex'}
+function newGame(){
+  setup();tiles=[];score=0;hist=[];won=dead=false;ov.style.display='none';
+  loadBest();
+  add();add();hud();clearHint();save();
+}
+function canMove(){
+  if(tiles.length<n*n)return true;
+  const g={};tiles.forEach(t=>g[t.r+','+t.c]=t.v);
+  return tiles.some(t=>g[t.r+','+(t.c+1)]===t.v||g[(t.r+1)+','+t.c]===t.v);
+}
+function move(d){
+  if(dead||ov.style.display==='flex')return;
+  tiles.forEach(t=>t.m=0);
+  const g=Array.from({length:n},()=>Array(n).fill(null));tiles.forEach(t=>g[t.r][t.c]=t);
+  const snap={t:tiles.map(t=>({v:t.v,r:t.r,c:t.c})),s:score};
+  let moved=false;const rem=[];
+  for(let i=0;i<n;i++){
+    const cells=[];
+    for(let j=0;j<n;j++)cells.push(d===0?[i,j]:d===2?[i,n-1-j]:d===1?[j,i]:[n-1-j,i]);
+    const line=cells.map(([r,c])=>g[r][c]).filter(Boolean),out=[],gone=[];
+    line.forEach(t=>{const o=out[out.length-1];
+      if(o&&o.v===t.v&&!o.m){o.v*=2;o.m=1;o.pop=1;score+=o.v;gone.push([t,o])}else out.push(t)});
+    out.forEach((t,k)=>{const[r,c]=cells[k];if(t.r!==r||t.c!==c)moved=true;t.r=r;t.c=c});
+    gone.forEach(([t,o])=>{t.r=o.r;t.c=o.c;rem.push(t);moved=true});
+  }
+  if(!moved)return;
+  hist.push(snap);if(hist.length>30)hist.shift();clearHint();
+  tiles=tiles.filter(t=>!rem.includes(t));
+  tiles.forEach(place);
+  rem.forEach(t=>{place(t);const e=els.get(t.id);els.delete(t.id);setTimeout(()=>e.remove(),140)});
+  setTimeout(()=>{add();hud();
+    if(!won&&tiles.some(t=>t.v>=2048)){won=true;show('به ۲۰۴۸ رسیدی! 🎉',[['ادامه بده',()=>ov.style.display='none'],['بازی جدید',newGame]])}
+    else if(!canMove()){dead=true;show('بازی تمام شد',[['دوباره',newGame]])}save();
+  },110);
+  hud();
+}
+function undo(){
+  if(!hist.length)return;const s=hist.pop();
+  tl.innerHTML='';els.clear();
+  tiles=s.t.map(o=>({id:++uid,v:o.v,r:o.r,c:o.c,pop:0,m:0}));score=s.s;dead=false;ov.style.display='none';
+  tiles.forEach(place);hud();save();clearHint();
+}
+$('nw').onclick=newGame;$('un').onclick=undo;
+const tk=()=>'g2048-tile-'+n;
+function loadBest(){best=0;bestTile=0;try{best=+localStorage.getItem(bk())||0;bestTile=+localStorage.getItem(tk())||0}catch(e){}}
+function clearHint(){$('hn').textContent=''}
+function save(){try{if(dead)localStorage.removeItem('g2048-save');else localStorage.setItem('g2048-save',JSON.stringify({n,score,won,t:tiles.map(t=>[t.v,t.r,t.c]),h:hist.slice(-15)}))}catch(e){}}
+function loadSave(){
+  try{const s=JSON.parse(localStorage.getItem('g2048-save'));n=s.n;setup();tiles=[];score=s.score;hist=s.h||[];won=!!s.won;dead=false;ov.style.display='none';loadBest();
+    s.t.forEach(([v,r,c])=>{const t={id:++uid,v,r,c,pop:0,m:0};tiles.push(t);place(t)});hud();clearHint()}catch(e){newGame()}
+}
+function sim(g,d){
+  const N=g.length,o=g.map(r=>r.slice());let sc=0,moved=false;
+  for(let i=0;i<N;i++){
+    const cells=[];for(let j=0;j<N;j++)cells.push(d===0?[i,j]:d===2?[i,N-1-j]:d===1?[j,i]:[N-1-j,i]);
+    const vals=cells.map(([r,c])=>g[r][c]).filter(Boolean),out=[];
+    for(let k=0;k<vals.length;k++){if(vals[k+1]===vals[k]){out.push(vals[k]*2);sc+=vals[k]*2;k++}else out.push(vals[k])}
+    cells.forEach(([r,c],k)=>{const nv=out[k]||0;if(g[r][c]!==nv)moved=true;o[r][c]=nv});
+  }
+  return{g:o,sc,moved};
+}
+function evalG(g){
+  const N=g.length,L=v=>v?Math.log2(v):0;let e=0,pen=0,mx=0;
+  for(let i=0;i<N;i++){let a=0,b=0,c=0,d=0;for(let j=0;j<N-1;j++){const x=L(g[i][j])-L(g[i][j+1]);x>0?a+=x:b-=x;const y=L(g[j][i])-L(g[j+1][i]);y>0?c+=y:d-=y}pen+=Math.min(a,b)+Math.min(c,d)}
+  g.forEach(r=>r.forEach(v=>{if(!v)e++;mx=Math.max(mx,v)}));
+  const corner=[g[0][0],g[0][N-1],g[N-1][0],g[N-1][N-1]].includes(mx)?1:0;
+  return e*3-pen*1.5+corner*5+Math.log2(mx||1);
+}
+function hint(){
+  if(dead||ov.style.display==='flex')return;
+  const g=Array.from({length:n},()=>Array(n).fill(0));tiles.forEach(t=>g[t.r][t.c]=t.v);
+  let bm=-1,bv=-1e9;
+  for(let d=0;d<4;d++){
+    const a=sim(g,d);if(!a.moved)continue;
+    let m2=-1e9;for(let e=0;e<4;e++){const b=sim(a.g,e);m2=Math.max(m2,b.moved?evalG(b.g)+b.sc*.02:-100)}
+    const v=(evalG(a.g)+a.sc*.02)*.4+m2*.6;if(v>bv){bv=v;bm=d}
+  }
+  const nm=['چپ ←','بالا ↑','راست →','پایین ↓'];
+  $('hn').textContent=bm<0?'حرکتی باقی نمانده':'💡 پیشنهاد: حرکت به '+nm[bm];
+}
+$('hb').onclick=hint;
+$('sv').onclick=()=>{save();$('hn').textContent='بازی ذخیره شد ✅';setTimeout(clearHint,2000)};
+addEventListener('keydown',e=>{if(e.key==='h')hint()});
+document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{n=+b.dataset.n;newGame()});
+addEventListener('keydown',e=>{
+  const m={ArrowLeft:0,ArrowUp:1,ArrowRight:2,ArrowDown:3,a:0,w:1,d:2,s:3};
+  if(e.key in m){e.preventDefault();move(m[e.key])}
+  else if(e.key==='z'||e.key==='u')undo();
+});
+let sx,sy;
+bd.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+bd.addEventListener('touchend',e=>{
+  if(sx==null)return;
+  const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;sx=null;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
+  move(Math.abs(dx)>Math.abs(dy)?(dx<0?0:2):(dy<0?1:3));
+},{passive:true});
+let s0=null;try{s0=JSON.parse(localStorage.getItem('g2048-save'))}catch(e){}
+if(s0&&s0.t&&s0.t.length>1){n=s0.n||4;setup();loadBest();hud();show('بازی ذخیره‌شده‌ای پیدا شد ('+fa(s0.score)+' امتیاز)',[['ادامه',loadSave],['بازی جدید',newGame]])}else newGame();
+</script>
+</body>
+</html>

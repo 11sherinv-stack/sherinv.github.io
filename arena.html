@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>نبرد آرنا</title>
+<style>
+:root{--bg:#f1efe6;--ink:#222;--muted:#666;--card:#fff;--line:#c9c4b3;--el:#b23fd1;--btn:#2d6cdf;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171c;--ink:#eee;--muted:#9aa;--card:#252932;--line:#3a3f4b;--el:#d46bf0;--btn:#5b94f5;--btnink:#0b1220}}
+:root[data-theme="dark"]{--bg:#15171c;--ink:#eee;--muted:#9aa;--card:#252932;--line:#3a3f4b;--el:#d46bf0;--btn:#5b94f5;--btnink:#0b1220}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;display:flex;flex-direction:column;align-items:center;padding:8px;min-height:100vh;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.top{display:flex;justify-content:space-between;width:min(96vw,360px);font-size:.95rem;margin-bottom:6px}
+.wrap{position:relative}
+canvas{display:block;height:min(calc(100svh - 190px),520px);aspect-ratio:360/520;border-radius:10px;touch-action:none}
+.over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,14,20,.78);color:#fff;border-radius:10px;text-align:center;padding:16px}
+.over h2{margin:0}
+.over p{margin:0;opacity:.85}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:10px;padding:10px 22px;cursor:pointer}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.elx{width:min(96vw,360px);height:14px;background:var(--line);border-radius:7px;margin-top:8px;overflow:hidden;position:relative}
+#elb{height:100%;background:var(--el);width:50%}
+.elt{width:min(96vw,360px);font-size:.8rem;color:var(--muted);margin-top:2px}
+.hand{display:flex;gap:6px;margin-top:6px;width:min(96vw,360px);overflow-x:auto;padding:6px 0 4px}
+.card{flex:0 0 70px;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:6px 2px;text-align:center;font-size:.72rem;line-height:1.3}
+.card .em{font-size:1.5rem;display:block}
+.card .co{display:inline-block;background:var(--el);color:#fff;border-radius:50%;width:20px;height:20px;line-height:20px;font-size:.75rem}
+.card.sel{border-color:var(--btn);transform:translateY(-4px)}
+.card.no{opacity:.45}
+</style>
+</head>
+<body><a href="../index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<div class="top"><span>زمان: <b id="tm">۲:۰۰</b></span><span id="cnt">برج‌ها ۳ به ۳</span></div>
+<div class="wrap">
+  <canvas id="c" width="360" height="520"></canvas>
+  <div class="over" id="over"><h2 id="ti">نبرد آرنا</h2><p id="ms">یک کارت انتخاب کن (کارت‌ها اسکرول می‌شوند) و روی نیمه‌ی پایین زمین بزن. برج‌های حریف را بشکن.</p><button id="go">شروع نبرد</button></div>
+</div>
+<div class="elx"><div id="elb"></div></div>
+<div class="elt">اکسیر: <span id="elv">۵</span></div>
+<div class="hand" id="hand"></div>
+<script>
+const W=360,H=520,cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const $=i=>document.getElementById(i);
+const fa=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const CARDS=[
+{n:'شمشیرزن',e:'⚔️',c:3,hp:220,d:40,cd:1,r:16,s:45},
+{n:'کماندار',e:'🏹',c:3,hp:110,d:22,cd:.9,r:80,s:40},
+{n:'غول سنگی',e:'🗿',c:5,hp:700,d:50,cd:1.5,r:18,s:28,to:1},
+{n:'موش‌ها',e:'🐀',c:2,hp:50,d:14,cd:.7,r:12,s:60,k:3},
+{n:'گوی آتش',e:'🔥',c:4,sp:1,rad:45,ud:150,td:100,col:'#ff8a3d'},
+{n:'نیزه‌دار',e:'🔱',c:2,hp:130,d:30,cd:.8,r:28,s:50},
+{n:'شوالیه',e:'🛡️',c:4,hp:450,d:55,cd:1.1,r:16,s:38},
+{n:'جادوگر',e:'🧙',c:5,hp:140,d:40,cd:1.4,r:70,s:36,spl:1},
+{n:'گراز دونده',e:'🐗',c:4,hp:300,d:80,cd:1.2,r:14,s:85,to:1},
+{n:'اژدهای کوچک',e:'🐲',c:4,hp:200,d:28,cd:1,r:60,s:45,fl:1},
+{n:'خفاش‌ها',e:'🦇',c:3,hp:60,d:15,cd:.6,r:12,s:75,fl:1,k:3},
+{n:'برج توپ',e:'💣',c:3,hp:250,d:35,cd:.9,r:90,s:0,bd:1,life:20},
+{n:'صاعقه',e:'⚡',c:3,sp:1,rad:30,ud:200,td:120,col:'#ffe066'},
+{n:'یخ‌زن',e:'❄️',c:3,sp:1,rad:55,ud:40,td:20,fz:3,col:'#7fd8ff'},
+{n:'شفا',e:'💚',c:3,sp:1,rad:60,heal:150,col:'#3ddc84'}];
+let U,T,fx,el,ael,tl,sel,run=false,last,aiT;
+const mk=(t,x,y,k)=>({x,y,t,k,hp:k?1200:600,mh:k?1200:600,d:k?30:25,r:k?120:110,cd:0,tw:1,rad:k?22:17});
+function reset(){T=[mk(0,80,390),mk(0,280,390),mk(0,180,470,1),mk(1,80,130),mk(1,280,130),mk(1,180,50,1)];U=[];fx=[];el=5;ael=5;tl=120;sel=-1;aiT=3}
+function hurt(o,d){o.hp-=d}
+function spawn(i,t,x,y){
+  const c=CARDS[i];
+  if(c.sp){
+    const all=U.concat(T);
+    all.forEach(o=>{if(Math.hypot(o.x-x,o.y-y)>=c.rad+(o.rad||0))return;if(c.heal){if(o.t===t)o.hp=Math.min(o.mh,o.hp+c.heal)}else if(o.t!==t){hurt(o,o.tw?c.td:c.ud);if(c.fz)o.fz=c.fz}});
+    fx.push({k:'ring',x,y,l:.4,r:c.rad,col:c.col});return;
+  }
+  const n=c.k||1;
+  for(let j=0;j<n;j++)U.push({...c,x:x+(j-(n-1)/2)*12,y,t,mh:c.hp,cdt:0,rad:c.bd?14:11,i});
+}
+function target(u){
+  const en=[];
+  if(!u.to)U.forEach(o=>{if(o.t!==u.t&&!(o.fl&&u.r<30)&&Math.hypot(o.x-u.x,o.y-u.y)<90)en.push(o)});
+  if(en.length)return en.sort((a,b)=>Math.hypot(a.x-u.x,a.y-u.y)-Math.hypot(b.x-u.x,b.y-u.y))[0];
+  const side=u.x<180?80:280;
+  const lane=T.find(o=>o.t!==u.t&&!o.k&&o.x===side&&o.hp>0);
+  return lane||T.find(o=>o.t!==u.t&&o.k);
+}
+function step(dt){
+  tl-=dt;el=Math.min(10,el+dt/2.8);ael=Math.min(10,ael+dt/2.8);
+  U.forEach(u=>{
+    u.cdt-=dt;if(u.life)u.hp-=dt*u.mh/u.life;if(u.fz>0){u.fz-=dt;return}const g=target(u);if(!g)return;
+    const d=Math.hypot(g.x-u.x,g.y-u.y)-(g.rad||0)-u.rad;
+    if(d<=u.r){
+      if(u.cdt<=0){hurt(g,u.d);if(u.spl)U.forEach(o=>{if(o!==g&&o.t!==u.t&&Math.hypot(o.x-g.x,o.y-g.y)<28)hurt(o,u.d*.6)});u.cdt=u.cd;if(u.r>30)fx.push({k:'ln',x:u.x,y:u.y,a:g.x,b:g.y,l:.12})}
+    }else if(u.s){const L=Math.hypot(g.x-u.x,g.y-u.y);u.x+=(g.x-u.x)/L*u.s*dt;u.y+=(g.y-u.y)/L*u.s*dt}
+  });
+  for(let i=0;i<U.length;i++)for(let j=i+1;j<U.length;j++){
+    const a=U[i],b=U[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d<14&&d>.01){const p=(14-d)/2/d;a.x+=(a.x-b.x)*p;a.y+=(a.y-b.y)*p;b.x-=(a.x-b.x)*p;b.y-=(a.y-b.y)*p}
+  }
+  T.forEach(t=>{
+    if(t.hp<=0)return;t.cd-=dt;if(t.fz>0){t.fz-=dt;return}if(t.cd>0)return;
+    const e=U.filter(o=>o.t!==t.t&&Math.hypot(o.x-t.x,o.y-t.y)<t.r).sort((a,b)=>Math.hypot(a.x-t.x,a.y-t.y)-Math.hypot(b.x-t.x,b.y-t.y))[0];
+    if(e){hurt(e,t.d);t.cd=.8;fx.push({k:'ln',x:t.x,y:t.y,a:e.x,b:e.y,l:.12})}
+  });
+  U=U.filter(u=>u.hp>0);
+  fx.forEach(f=>f.l-=dt);fx=fx.filter(f=>f.l>0);
+  aiT-=dt;
+  if(aiT<=0){
+    const ok=CARDS.map((c,i)=>i).filter(i=>CARDS[i].c<=ael&&!CARDS[i].heal);
+    if(ok.length){
+      const i=ok[Math.floor(Math.random()*ok.length)],c=CARDS[i];
+      if(c.sp){const tg=U.filter(o=>o.t===0);if(tg.length){const o=tg[0];ael-=c.c;spawn(i,1,o.x,o.y)}}
+      else{ael-=c.c;spawn(i,1,Math.random()<.5?80:280,150+Math.random()*80)}
+    }
+    aiT=1.8+Math.random()*2.2;
+  }
+  const al=t=>T.filter(o=>o.t===t&&o.hp>0&&!o.k).length;
+  $('cnt').textContent='برج‌ها '+fa(al(0))+' به '+fa(al(1));
+  const m=Math.max(0,Math.ceil(tl));$('tm').textContent=fa(Math.floor(m/60)+':'+String(m%60).padStart(2,'0'));
+  const kp=T[2].hp<=0,ke=T[5].hp<=0;
+  if(kp||ke||tl<=0){
+    let w;
+    if(ke&&!kp)w=0;else if(kp&&!ke)w=1;
+    else{
+      const a=al(0)+(kp?0:1),b=al(1)+(ke?0:1);
+      if(a!==b)w=a>b?0:1;
+      else{const s=t=>T.filter(o=>o.t===t).reduce((x,o)=>x+Math.max(0,o.hp),0);w=s(0)>s(1)?0:s(1)>s(0)?1:-1}
+    }
+    finish(w);
+  }
+}
+function finish(w){
+  run=false;
+  $('ti').textContent=w===0?'پیروز شدی! 🏆':w===1?'شکست خوردی':'مساوی';
+  $('ms').textContent=w===0?'برج‌های حریف را نابود کردی.':w===1?'برج‌های تو از حریف کمتر مانده.':'هر دو طرف برابر بودند.';
+  $('go').textContent='نبرد دوباره';$('over').style.display='flex';
+}
+function bar(x,y,w,p,col){ctx.fillStyle='#0006';ctx.fillRect(x-w/2,y,w,4);ctx.fillStyle=col;ctx.fillRect(x-w/2,y,w*Math.max(0,p),4)}
+function draw(){
+  ctx.fillStyle='#7fb069';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#6aa157';ctx.fillRect(0,0,W,250);
+  ctx.fillStyle='#4a90d9';ctx.fillRect(0,250,W,20);
+  ctx.fillStyle='#a1764a';[80,280].forEach(x=>ctx.fillRect(x-20,248,40,24));
+  if(sel>=0&&!CARDS[sel].sp){ctx.fillStyle='#ffffff30';ctx.fillRect(0,270,W,H-270)}
+  T.forEach(t=>{
+    if(t.hp<=0){ctx.fillStyle='#0004';ctx.beginPath();ctx.arc(t.x,t.y,t.rad*.8,0,7);ctx.fill();return}
+    ctx.fillStyle=t.t?'#c94c4c':'#3f6fd1';ctx.beginPath();ctx.arc(t.x,t.y,t.rad,0,7);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font=(t.k?20:15)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t.k?'👑':'🏰',t.x,t.y+1);
+    bar(t.x,t.y-t.rad-8,34,t.hp/t.mh,'#3ddc84');
+  });
+  U.forEach(u=>{
+    ctx.fillStyle=u.t?'#c94c4c':'#3f6fd1';ctx.beginPath();ctx.arc(u.x,u.y,u.rad+(u.to?4:0),0,7);ctx.fill();
+    ctx.font=(u.to?20:13)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(u.e,u.x,u.y+1);
+    bar(u.x,u.y-u.rad-8,20,u.hp/u.mh,'#3ddc84');
+  });
+  fx.forEach(f=>{
+    if(f.k==='ring'){ctx.strokeStyle=f.col;ctx.lineWidth=4;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1-f.l/.4*.3),0,7);ctx.stroke();ctx.fillStyle=f.col+'55';ctx.fill()}
+    else{ctx.strokeStyle='#ffe066';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.a,f.b);ctx.stroke()}
+  });
+  $('elb').style.width=el*10+'%';$('elv').textContent=fa(Math.floor(el));
+  document.querySelectorAll('.card').forEach((b,i)=>{b.classList.toggle('sel',i===sel);b.classList.toggle('no',CARDS[i].c>el)});
+}
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(run)step(dt);
+  draw();requestAnimationFrame(loop);
+}
+$('hand').innerHTML=CARDS.map((c,i)=>'<button class="card" data-i="'+i+'"><span class="em">'+c.e+'</span>'+c.n+'<br><span class="co">'+fa(c.c)+'</span></button>').join('');
+document.querySelectorAll('.card').forEach(b=>b.onclick=()=>{if(run)sel=sel===+b.dataset.i?-1:+b.dataset.i});
+cv.addEventListener('pointerdown',e=>{
+  if(!run||sel<0)return;
+  const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,c=CARDS[sel];
+  if(c.c>el)return;
+  if(!c.sp&&y<275)return;
+  el-=c.c;spawn(sel,0,x,y);sel=-1;
+});
+$('go').onclick=()=>{reset();run=true;$('over').style.display='none'};
+reset();last=performance.now();requestAnimationFrame(loop);
+</script>
+</body>
+</html>

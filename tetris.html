@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تتریس</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.game{display:flex;gap:10px;direction:ltr}
+.wrap{position:relative}
+canvas{display:block;border-radius:8px;background:#12151c}
+#c{height:min(calc(100svh - 230px),480px);aspect-ratio:1/2;width:auto;touch-action:none}
+.side{display:flex;flex-direction:column;gap:8px;direction:rtl;width:100px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:.7rem;color:var(--muted);text-align:center}
+.box canvas{margin:2px auto;width:88px;height:auto;background:transparent}
+.box b{display:block;color:var(--ink);font-size:1rem;margin-bottom:2px}
+.over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,12,18,.8);color:#fff;border-radius:8px;text-align:center;padding:12px;direction:rtl}
+.over h2{margin:0}.over p{margin:0;font-size:.85rem;opacity:.85;line-height:1.7}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:10px;padding:9px 20px;cursor:pointer}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:repeat(4,64px);gap:6px;margin-top:10px;direction:ltr}
+.ctl button{padding:0;height:46px;font-size:1.25rem;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.ctl button:active{background:var(--btn);color:var(--btnink)}
+.hint{color:var(--muted);font-size:.75rem;margin-top:8px;text-align:center}
+</style>
+</head>
+<body><a href="../index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🧱 تتریس</h1>
+<div class="game">
+  <div class="wrap">
+    <canvas id="c" width="240" height="480"></canvas>
+    <div class="over" id="over"><h2 id="ti">تتریس</h2><p id="ms">خط‌ها را کامل کن. ⬇ سقوط سریع · 📥 نگه‌داری</p><button id="go">شروع بازی</button></div>
+  </div>
+  <div class="side">
+    <div class="box">نگه‌داری<canvas id="hc" width="96" height="72"></canvas></div>
+    <div class="box">بعدی<canvas id="nc" width="96" height="216"></canvas></div>
+    <div class="box"><b id="sc">۰</b>امتیاز<b id="ln">۰</b>خط<b id="lv">۱</b>مرحله<b id="bs">۰</b>رکورد</div>
+  </div>
+</div>
+<div class="ctl">
+  <button data-a="ccw" aria-label="چرخش چپ">⟲</button><button data-a="cw" aria-label="چرخش راست">⟳</button><button data-a="hold" aria-label="نگه‌داری">📥</button><button data-a="pause" aria-label="توقف">⏸</button>
+  <button data-a="l" data-r="1" aria-label="چپ">◀</button><button data-a="d" data-r="1" aria-label="پایین">▼</button><button data-a="r" data-r="1" aria-label="راست">▶</button><button data-a="drop" aria-label="سقوط">⏬</button>
+</div>
+<div class="hint">جهت‌نماها · ↑/X چرخش · Z چرخش معکوس · فاصله سقوط · C نگه‌داری · P توقف</div>
+<script>
+const C=24,CO=10,RO=20,$=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const SH={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],O:[[1,1],[1,1]],T:[[0,1,0],[1,1,1],[0,0,0]],S:[[0,1,1],[1,1,0],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]]};
+const COL={I:'#00bcd4',O:'#fdd835',T:'#ab47bc',S:'#66bb6a',Z:'#ef5350',J:'#42a5f5',L:'#ffa726'};
+const cx=$('c').getContext('2d'),hx=$('hc').getContext('2d'),nx=$('nc').getContext('2d');
+let board,cur,hold,canHold,bag=[],nxt=[],score,lines,lvl,acc,lockT,st='idle',best=0,last=0,au,flash=[];
+try{best=+localStorage.getItem('tetris-best')||0}catch(e){}
+$('bs').textContent=fa(best);
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='square';o.frequency.value=f;g.gain.value=.03*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function take(){if(bag.length<1){const b=Object.keys(SH);for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}bag.push(...b)}return bag.shift()}
+const mk=k=>{const m=SH[k].map(r=>r.slice());return{k,m,x:Math.floor((CO-m.length)/2),y:k==='I'?-1:0}};
+function hit(m,x,y){for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++)if(m[r][c]){const a=x+c,b=y+r;if(a<0||a>=CO||b>=RO||(b>=0&&board[b][a]))return true}return false}
+const cw=m=>m[0].map((_,i)=>m.map(r=>r[i]).reverse());
+const ccw=m=>m[0].map((_,i)=>m.map(r=>r[r.length-1-i]));
+function spawn(){cur=mk(nxt.shift());while(nxt.length<4)nxt.push(take());canHold=true;lockT=0;acc=0;if(hit(cur.m,cur.x,cur.y))over()}
+function reset(){board=Array.from({length:RO},()=>Array(CO).fill(0));bag=[];nxt=[];while(nxt.length<4)nxt.push(take());hold=null;score=0;lines=0;lvl=1;flash=[];spawn();stats()}
+function stats(){$('sc').textContent=fa(score);$('ln').textContent=fa(lines);$('lv').textContent=fa(lvl)}
+function rot(d){const m=d>0?cw(cur.m):ccw(cur.m);for(const dy of[0,-1])for(const dx of[0,-1,1,-2,2])if(!hit(m,cur.x+dx,cur.y+dy)){cur.m=m;cur.x+=dx;cur.y+=dy;lockT=0;beep(380,.03);return}}
+function mv(dx){if(!hit(cur.m,cur.x+dx,cur.y)){cur.x+=dx;lockT=0}}
+function soft(){if(!hit(cur.m,cur.x,cur.y+1)){cur.y++;score++;acc=0;stats()}}
+function drop(){let n=0;while(!hit(cur.m,cur.x,cur.y+1)){cur.y++;n++}score+=n*2;beep(160,.08);lock()}
+function doHold(){if(!canHold)return;const k=cur.k;if(hold)cur=mk(hold);else{cur=mk(nxt.shift());while(nxt.length<4)nxt.push(take())}hold=k;canHold=false;lockT=0;acc=0;beep(300,.05)}
+function lock(){
+  for(let r=0;r<cur.m.length;r++)for(let c=0;c<cur.m[r].length;c++)if(cur.m[r][c]){const b=cur.y+r;if(b<0)return over();board[b][cur.x+c]=cur.k}
+  let n=0;
+  for(let r=RO-1;r>=0;){if(board[r].every(Boolean)){flash.push(r);board.splice(r,1);board.unshift(Array(CO).fill(0));n++}else r--}
+  if(n){score+=[0,100,300,500,800][n]*lvl;lines+=n;lvl=1+Math.floor(lines/10);beep(500+n*120,.15);flash=flash.map(r=>({r,l:.25}))}
+  else flash=[];
+  stats();spawn();
+}
+function over(){
+  st='over';beep(120,.4);
+  const rec=score>best;if(rec){best=score;try{localStorage.setItem('tetris-best',best)}catch(e){}$('bs').textContent=fa(best)}
+  $('ti').textContent=rec&&score>0?'رکورد جدید! 🏆':'باختی!';
+  $('ms').textContent='امتیاز: '+fa(score)+' · خط: '+fa(lines)+' · مرحله: '+fa(lvl);
+  $('go').textContent='دوباره بازی کن';$('over').style.display='flex';
+}
+function pause(){
+  if(st==='play'){st='pause';$('ti').textContent='متوقف شد';$('ms').textContent='برای ادامه دکمه را بزن.';$('go').textContent='ادامه';$('over').style.display='flex'}
+  else if(st==='pause'){st='play';$('over').style.display='none'}
+}
+$('go').onclick=()=>{if(st==='pause')pause();else{reset();st='play';$('over').style.display='none'}};
+const interval=()=>Math.max(60,800*Math.pow(.85,lvl-1));
+function cell(x,px,py,col,s,al){x.globalAlpha=al||1;x.fillStyle=col;x.fillRect(px,py,s,s);x.fillStyle='rgba(255,255,255,.3)';x.fillRect(px,py,s,3);x.fillRect(px,py,3,s);x.fillStyle='rgba(0,0,0,.28)';x.fillRect(px,py+s-3,s,3);x.fillRect(px+s-3,py,3,s);x.globalAlpha=1}
+function mini(x,k,w,h,s,oy){
+  x.clearRect(0,oy,w,h);if(!k)return;const m=SH[k];let a=9,b=-1,c=9,d=-1;
+  m.forEach((r,i)=>r.forEach((v,j)=>{if(v){a=Math.min(a,i);b=Math.max(b,i);c=Math.min(c,j);d=Math.max(d,j)}}));
+  const ox=(w-(d-c+1)*s)/2,py=oy+(h-(b-a+1)*s)/2;
+  m.forEach((r,i)=>r.forEach((v,j)=>{if(v)cell(x,ox+(j-c)*s,py+(i-a)*s,COL[k],s)}));
+}
+function draw(){
+  cx.fillStyle='#12151c';cx.fillRect(0,0,240,480);
+  cx.strokeStyle='#1e2330';cx.lineWidth=1;
+  for(let i=1;i<CO;i++){cx.beginPath();cx.moveTo(i*C+.5,0);cx.lineTo(i*C+.5,480);cx.stroke()}
+  for(let i=1;i<RO;i++){cx.beginPath();cx.moveTo(0,i*C+.5);cx.lineTo(240,i*C+.5);cx.stroke()}
+  for(let r=0;r<RO;r++)for(let c=0;c<CO;c++)if(board[r][c])cell(cx,c*C,r*C,COL[board[r][c]],C);
+  if(cur&&st!=='idle'){
+    let gy=cur.y;while(!hit(cur.m,cur.x,gy+1))gy++;
+    cur.m.forEach((row,r)=>row.forEach((v,c)=>{if(v){
+      const gx=(cur.x+c)*C;cx.strokeStyle=COL[cur.k];cx.globalAlpha=.45;cx.lineWidth=2;cx.strokeRect(gx+1,(gy+r)*C+1,C-2,C-2);cx.globalAlpha=1;
+      if(cur.y+r>=0)cell(cx,gx,(cur.y+r)*C,COL[cur.k],C)}}));
+  }
+  flash.forEach(f=>{cx.fillStyle='rgba(255,255,255,'+Math.max(0,f.l*3)+')';cx.fillRect(0,f.r*C,240,C)});
+  mini(hx,hold,96,72,18,0);
+  nx.clearRect(0,0,96,216);
+  nxt.slice(0,3).forEach((k,i)=>{const t=document.createElement('canvas');mini(nx,k,96,72,18,i*72)});
+}
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(st==='play'){
+    acc+=dt*1000;
+    if(hit(cur.m,cur.x,cur.y+1)){lockT+=dt;if(lockT>=.5)lock()}else lockT=0;
+    if(st==='play'&&acc>=interval()){acc=0;if(!hit(cur.m,cur.x,cur.y+1))cur.y++}
+  }
+  flash.forEach(f=>f.l-=dt);flash=flash.filter(f=>f.l>0);
+  if(board)draw();requestAnimationFrame(loop);
+}
+function act(a){
+  if(a==='pause')return pause();
+  if(st!=='play')return;
+  if(a==='l')mv(-1);else if(a==='r')mv(1);else if(a==='d')soft();
+  else if(a==='cw')rot(1);else if(a==='ccw')rot(-1);else if(a==='drop')drop();else if(a==='hold')doHold();
+}
+addEventListener('keydown',e=>{
+  const m={ArrowLeft:'l',ArrowRight:'r',ArrowDown:'d',ArrowUp:'cw',x:'cw',z:'ccw',' ':'drop',c:'hold',Shift:'hold',p:'pause'};
+  if(m[e.key]){e.preventDefault();act(m[e.key])}
+  else if(e.key==='Enter'&&(st==='idle'||st==='over'))$('go').click();
+});
+document.querySelectorAll('.ctl button').forEach(b=>{
+  let t1,t2;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
+  b.addEventListener('pointerdown',e=>{e.preventDefault();act(b.dataset.a);
+    if(b.dataset.r){t1=setTimeout(()=>{t2=setInterval(()=>act(b.dataset.a),55)},180)}});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='play')pause()});
+reset();st='idle';requestAnimationFrame(loop);
+</script>
+</body>
+</html>

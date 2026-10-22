@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>سودوکو</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;--thick:#2b3345;--sel:#bcd4ff;--peer:#e6edf9;--same:#cfe0ff;--given:#1c2230;--user:#2d6cdf;--bad:#d93025;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--thick:#aeb9d0;--sel:#33508a;--peer:#262d3d;--same:#2f4571;--given:#e8ecf3;--user:#7fb0ff;--bad:#ff6b5e}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--thick:#aeb9d0;--sel:#33508a;--peer:#262d3d;--same:#2f4571;--given:#e8ecf3;--user:#7fb0ff;--bad:#ff6b5e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.hud{display:flex;gap:10px;margin-bottom:6px}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:3px 14px;text-align:center;font-size:.72rem;color:var(--muted)}
+.hud b{display:block;font-size:1.05rem;color:var(--ink)}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:8px;padding:7px 14px;cursor:pointer}
+button.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button.on{outline:2px solid var(--btn)}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.wrap{position:relative;width:min(94vw,440px)}
+#bd{display:grid;grid-template-columns:repeat(9,1fr);width:100%;aspect-ratio:1;direction:ltr;border:2px solid var(--thick);background:var(--card)}
+.c{display:flex;align-items:center;justify-content:center;border:1px solid var(--line);font-size:clamp(1rem,5.4vw,1.6rem);cursor:pointer;color:var(--user);min-width:0}
+.c.g{color:var(--given);font-weight:700}
+.c.br{border-right:2px solid var(--thick)}.c.bb{border-bottom:2px solid var(--thick)}
+.c.p{background:var(--peer)}.c.m{background:var(--same)}.c.s{background:var(--sel)}
+.c.w{color:var(--bad)}
+.nt{display:grid;grid-template-columns:repeat(3,1fr);width:100%;height:100%;font-size:clamp(.45rem,2.3vw,.7rem);color:var(--muted);line-height:1;text-align:center;align-items:center}
+.over{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,12,18,.82);color:#fff;text-align:center;padding:12px}
+.over h2{margin:0}.over p{margin:0;line-height:1.8}
+.pad{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;width:min(94vw,440px);margin-top:8px;direction:ltr}
+.pad button{padding:8px 0;background:var(--card);color:var(--ink);border:1px solid var(--line);font-size:1.15rem;line-height:1.1}
+.pad button small{display:block;font-size:.6rem;color:var(--muted)}
+.pad button:disabled{opacity:.3}
+.hint{color:var(--muted);font-size:.74rem;margin-top:6px;text-align:center}
+</style>
+</head>
+<body><a href="../index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🔢 سودوکو</h1>
+<div class="hud"><div>زمان<b id="tm">۰:۰۰</b></div><div>اشتباه<b id="ms">۰</b></div><div>رکورد<b id="bs">—</b></div></div>
+<div class="row" id="df"><button class="alt on" data-d="easy">آسان</button><button class="alt" data-d="mid">متوسط</button><button class="alt" data-d="hard">سخت</button><button id="nw">بازی جدید</button></div>
+<div class="wrap"><div id="bd"></div>
+<div class="over" id="over"><h2>آفرین! 🎉</h2><p id="wm"></p><button id="ag">بازی جدید</button></div></div>
+<div class="row"><button class="alt" id="un">↶ برگشت</button><button class="alt" id="nt">✏️ یادداشت</button><button class="alt" id="er">🧽 پاک‌کن</button><button class="alt" id="hb">💡 راهنما</button></div>
+<div class="pad" id="pd"></div>
+<div class="hint">خانه را انتخاب کن و عدد بزن · پیشرفت خودکار ذخیره می‌شود · کیبورد: ۱–۹، Backspace، N یادداشت، H راهنما</div>
+<script>
+const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const GV={easy:40,mid:32,hard:26},bd=$('bd'),ov=$('over');
+let sol,giv,vals,notes,hinted,sel=-1,nm=false,hist=[],mis=0,secs=0,diff='easy',won=false;
+const peers=(i,j)=>{const r=i/9|0,c=i%9,r2=j/9|0,c2=j%9;return r===r2||c===c2||((r/3|0)===(r2/3|0)&&(c/3|0)===(c2/3|0))};
+const fmt=s=>fa(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'));
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function can(g,i,v){const r=i/9|0,c=i%9;for(let k=0;k<9;k++)if(g[r*9+k]===v||g[k*9+c]===v)return false;const br=r-r%3,bc=c-c%3;for(let a=0;a<3;a++)for(let b=0;b<3;b++)if(g[(br+a)*9+bc+b]===v)return false;return true}
+function fill(g){const i=g.indexOf(0);if(i<0)return true;for(const v of shuffle([1,2,3,4,5,6,7,8,9]))if(can(g,i,v)){g[i]=v;if(fill(g))return true;g[i]=0}return false}
+function count(g,lim){
+  let bi=-1,bc=null;
+  for(let i=0;i<81;i++)if(!g[i]){const c=[];for(let v=1;v<10;v++)if(can(g,i,v))c.push(v);if(!c.length)return 0;if(!bc||c.length<bc.length){bi=i;bc=c;if(c.length===1)break}}
+  if(bi<0)return 1;let n=0;
+  for(const v of bc){g[bi]=v;n+=count(g,lim-n);g[bi]=0;if(n>=lim)return n}
+  return n;
+}
+function bestKey(){return 'sudoku-best-'+diff}
+function showBest(){let b=0;try{b=+localStorage.getItem(bestKey())||0}catch(e){}$('bs').textContent=b?fmt(b):'—';return b}
+function newGame(d){
+  diff=d||diff;document.querySelectorAll('#df [data-d]').forEach(b=>b.classList.toggle('on',b.dataset.d===diff));
+  const g=Array(81).fill(0);fill(g);sol=g.slice();const p=g.slice();let left=81;
+  for(const i of shuffle([...Array(81).keys()])){if(left<=GV[diff])break;const b=p[i];p[i]=0;if(count(p.slice(),2)!==1)p[i]=b;else left--}
+  giv=p.map(v=>v>0);vals=p.slice();notes=Array(81).fill(0);hinted=Array(81).fill(0);
+  sel=-1;hist=[];mis=0;secs=0;won=false;ov.style.display='none';showBest();render();save();
+}
+function save(){try{if(won)localStorage.removeItem('sudoku-save');else localStorage.setItem('sudoku-save',JSON.stringify({sol,giv,vals,notes,hinted,mis,secs,diff}))}catch(e){}}
+function load(){
+  try{const s=JSON.parse(localStorage.getItem('sudoku-save'));if(!s||!s.vals)return false;
+    ({sol,giv,vals,notes,hinted,mis,secs,diff}=s);document.querySelectorAll('#df [data-d]').forEach(b=>b.classList.toggle('on',b.dataset.d===diff));
+    sel=-1;hist=[];won=false;showBest();render();return true}catch(e){return false}
+}
+function render(){
+  const sv=sel>=0?vals[sel]:0;let h='';
+  for(let i=0;i<81;i++){
+    const r=i/9|0,c=i%9;let cl='c';
+    if(giv[i])cl+=' g';if(c%3===2&&c<8)cl+=' br';if(r%3===2&&r<8)cl+=' bb';
+    if(sel>=0){if(i===sel)cl+=' s';else if(peers(sel,i))cl+=' p';if(sv&&vals[i]===sv&&i!==sel)cl+=' m'}
+    if(vals[i]&&vals[i]!==sol[i])cl+=' w';
+    let inner='';
+    if(vals[i])inner=fa(vals[i]);
+    else if(notes[i]){inner='<div class="nt">';for(let v=1;v<10;v++)inner+='<span>'+((notes[i]>>v)&1?fa(v):'')+'</span>';inner+='</div>'}
+    h+='<div class="'+cl+'" data-i="'+i+'">'+inner+'</div>';
+  }
+  bd.innerHTML=h;
+  document.querySelectorAll('#pd button').forEach(b=>{const v=+b.dataset.v,c=vals.filter(x=>x===v).length;b.disabled=c>=9;b.querySelector('small').textContent=fa(9-c)});
+  $('ms').textContent=fa(mis);$('tm').textContent=fmt(secs);$('nt').classList.toggle('on',nm);
+}
+const pushH=()=>{hist.push({v:vals.slice(),n:notes.slice(),m:mis,h:hinted.slice()});if(hist.length>100)hist.shift()};
+function cleanPeers(i,v){for(let j=0;j<81;j++)if(j!==i&&peers(i,j))notes[j]&=~(1<<v)}
+function put(v){
+  if(sel<0||giv[sel]||won)return;
+  if(nm){if(vals[sel])return;pushH();notes[sel]^=1<<v}
+  else{pushH();if(vals[sel]===v){vals[sel]=0}else{vals[sel]=v;notes[sel]=0;hinted[sel]=0;if(v!==sol[sel])mis++;cleanPeers(sel,v)}}
+  render();save();check();
+}
+function erase(){if(sel<0||giv[sel]||won)return;pushH();vals[sel]=0;notes[sel]=0;render();save()}
+function undo(){if(!hist.length||won)return;const s=hist.pop();vals=s.v;notes=s.n;mis=s.m;hinted=s.h;render();save()}
+function hint(){
+  if(won)return;
+  let t=sel;
+  if(!(t>=0&&!giv[t]&&vals[t]!==sol[t])){const w=[];for(let i=0;i<81;i++)if(vals[i]!==sol[i])w.push(i);if(!w.length)return;t=w[Math.floor(Math.random()*w.length)]}
+  pushH();sel=t;vals[t]=sol[t];notes[t]=0;hinted[t]=1;cleanPeers(t,sol[t]);render();save();check();
+}
+function check(){
+  if(!vals.every((v,i)=>v===sol[i]))return;
+  won=true;const hn=hinted.reduce((a,b)=>a+b,0);let b=showBest();const rec=!b||secs<b;
+  if(rec){try{localStorage.setItem(bestKey(),secs)}catch(e){}showBest()}
+  $('wm').innerHTML='زمان: '+fmt(secs)+' · اشتباه: '+fa(mis)+(rec?'<br>🏆 رکورد جدید!':'');
+  ov.style.display='flex';save();
+}
+bd.addEventListener('click',e=>{const c=e.target.closest('.c');if(c){sel=+c.dataset.i;render()}});
+$('pd').innerHTML=[1,2,3,4,5,6,7,8,9].map(v=>'<button data-v="'+v+'">'+fa(v)+'<small></small></button>').join('');
+document.querySelectorAll('#pd button').forEach(b=>b.onclick=()=>put(+b.dataset.v));
+document.querySelectorAll('#df [data-d]').forEach(b=>b.onclick=()=>newGame(b.dataset.d));
+$('nw').onclick=()=>newGame();$('ag').onclick=()=>newGame();
+$('un').onclick=undo;$('er').onclick=erase;$('hb').onclick=hint;
+$('nt').onclick=()=>{nm=!nm;render()};
+addEventListener('keydown',e=>{
+  if(e.key>='1'&&e.key<='9')put(+e.key);
+  else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0')erase();
+  else if(e.key==='n')$('nt').click();else if(e.key==='h')hint();
+  else if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo()}
+  else{const m={ArrowUp:-9,ArrowDown:9,ArrowLeft:-1,ArrowRight:1};if(e.key in m){e.preventDefault();const s=sel<0?40:sel+m[e.key];if(s>=0&&s<81&&!(m[e.key]===1&&sel%9===8)&&!(m[e.key]===-1&&sel%9===0)){sel=s;render()}}}
+});
+setInterval(()=>{if(!won&&!document.hidden&&vals){secs++;$('tm').textContent=fmt(secs);if(secs%10===0)save()}},1000);
+if(!load())newGame('easy');
+</script>
+</body>
+</html>
