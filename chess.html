@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>شطرنج</title>
 <style>
@@ -31,7 +31,7 @@ button:focus-visible,select:focus-visible{outline:3px solid var(--ink);outline-o
 .hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center}
 </style>
 </head>
-<body>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
 <h1>♟️ شطرنج</h1>
 <div class="row">
   <select id="mode" aria-label="حالت"><option value="ai">مقابل کامپیوتر</option><option value="2p">دو نفره</option></select>
@@ -49,7 +49,7 @@ const KN=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]],DIR=[[-1,0],[
 const V={P:100,N:320,B:330,R:500,Q:900,K:0};
 let b,turn,ca,ep,hist,sel=-1,moves=[],mode='ai',level=2,human='w',over=false,last=null,flip=false,busy=false,au;
 const side=p=>p?(p===p.toUpperCase()?'w':'b'):'';
-function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
 function init(){
   b=Array(64).fill('');'rnbqkbnr'.split('').forEach((p,i)=>{b[i]=p;b[56+i]=p.toUpperCase();b[8+i]='p';b[48+i]='P'});
   turn='w';ca={K:1,Q:1,k:1,q:1};ep=-1;hist=[];sel=-1;moves=[];over=false;last=null;busy=false;

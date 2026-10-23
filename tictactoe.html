@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>دوز</title>
 <style>
@@ -30,7 +30,7 @@ button:focus-visible,select:focus-visible{outline:3px solid var(--ink);outline-o
 .hint{color:var(--muted);font-size:.76rem;margin-top:10px;text-align:center}
 </style>
 </head>
-<body>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
 <h1>❌⭕ دوز</h1>
 <div class="row">
   <select id="mode" aria-label="حالت"><option value="ai">مقابل کامپیوتر</option><option value="2p">دو نفره</option></select>
@@ -48,7 +48,7 @@ const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳
 let N=3,K=3,cells,turn,over,mode='ai',lvl=2,human='X',lines,au,sc={X:0,O:0,D:0};
 try{sc=JSON.parse(localStorage.getItem('ttt-score'))||sc}catch(e){}
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
-function beep(f,d=.08){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function beep(f,d=.08){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
 function mkLines(){
   lines=[];
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){

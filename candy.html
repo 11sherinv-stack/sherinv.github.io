@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Candy Match</title>
 <style>
@@ -39,7 +39,7 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 #toast.on{opacity:1}
 </style>
 </head>
-<body>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
 <h1>🍬 Candy Match</h1>
 <div class="hud"><div>مرحله<b id="lv">۱</b></div><div>امتیاز<b id="sc">۰</b></div><div>هدف<b id="gl">۰</b></div><div>حرکت<b id="mv">۰</b></div><div>رکورد<b id="bs">۰</b></div></div>
 <div class="prog"><i id="pg"></i></div>
@@ -52,7 +52,7 @@ const N=8,T=['🍬','🍭','🍫','🍩','🍪','🍓'],$=i=>document.getElement
 let g,ids=0,busy=false,score=0,moves=0,goal=0,lvl=1,sel=null,best=0,au;const hint=new Set(),els=new Map(),bd=$('bd'),tl=$('tl'),ov=$('ov');
 try{lvl=+localStorage.getItem('candy-lvl')||1;best=+localStorage.getItem('candy-best')||0}catch(e){}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),rt=()=>Math.floor(Math.random()*T.length);
-function beep(f,d=.07){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),k=au.createGain();o.type='triangle';o.frequency.value=f;k.gain.value=.05;o.connect(k);k.connect(au.destination);o.start();k.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function beep(f,d=.07){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),k=au.createGain();o.type='triangle';o.frequency.value=f;k.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(k);k.connect(au.destination);o.start();k.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2000)}
 function place(t,r,c,inst){
   let e=els.get(t.id);const tr='translate('+c*100+'%,'+r*100+'%)';

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>بریک‌اوت</title>
 <style>
@@ -24,7 +24,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .hint{color:var(--muted);font-size:.76rem;margin-top:6px;text-align:center}
 </style>
 </head>
-<body>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
 <h1>🧱 بریک‌اوت</h1>
 <div class="hud"><div>امتیاز<b id="sc">۰</b></div><div>جان<b id="lv">❤️❤️❤️</b></div><div>مرحله<b id="lvl">۱</b></div><div>رکورد<b id="bs">۰</b></div></div>
 <div class="wrap"><canvas id="c" width="360" height="520"></canvas>
@@ -35,7 +35,7 @@ const W=360,H=520,BR=7,COLS=9,BW=36,BH=16,OX=18,OY=70;
 const $=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d'),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
 let st='idle',score=0,lives=3,lvl=1,best=0,pad,balls=[],bricks=[],pups=[],parts=[],wideT=0,slowT=0,msgT=0,msg='',last=0,au,kl=0,kr=0;
 try{best=+localStorage.getItem('breakout-best')||0}catch(e){}
-function beep(f,d=.05,ty='square'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.03;o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function beep(f,d=.05,ty='square'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.03*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
 const speed=()=>Math.min(520,300+lvl*22)*(slowT>0?.7:1);
 function build(){
   bricks=[];const rows=5+Math.min(lvl,3),p=lvl%4;
