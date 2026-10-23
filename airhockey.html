@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Air Hockey</title>
+<style>
+:root{--bg:#e8f1f7;--ink:#14263a;--muted:#5a7188;--card:#fff;--line:rgba(30,70,110,.25);--btn:#14a89b;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1622;--ink:#e6f0fa;--muted:#8fa6bd;--card:#16273a;--line:rgba(140,190,240,.25);--btn:#2fd5c3;--btnink:#08201d}}
+:root[data-theme="dark"]{--bg:#0c1622;--ink:#e6f0fa;--muted:#8fa6bd;--card:#16273a;--line:rgba(140,190,240,.25);--btn:#2fd5c3;--btnink:#08201d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.25rem}
+.row{display:flex;gap:6px;margin:3px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:6px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.wrap{position:relative}
+canvas{display:block;height:min(calc(100svh - 150px),560px);aspect-ratio:360/560;width:auto;max-width:96vw;border-radius:14px;touch-action:none;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(6,16,28,.8);color:#fff;border-radius:14px;text-align:center;padding:14px}
+.ov h2{margin:0}.ov p{margin:0;line-height:1.8;font-size:.9rem;opacity:.9}
+.hint{color:var(--muted);font-size:.76rem;margin-top:6px;text-align:center}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🏒 Air Hockey</h1>
+<div class="row">
+  <select id="md" aria-label="حالت"><option value="1">مقابل کامپیوتر</option><option value="2">دو نفره (هر کس یک نیمه)</option></select>
+  <select id="lv" aria-label="سطح"><option value="0">آسان</option><option value="1" selected>متوسط</option><option value="2">سخت</option></select>
+</div>
+<div class="wrap"><canvas id="c" width="360" height="560"></canvas>
+<div class="ov" id="ov"><h2 id="ot">Air Hockey</h2><p id="om">اولین نفری که به ۷ گل برسد برنده است.<br>راکت را با انگشت بکش و توپ را به دروازه بزن.</p><button class="b pr" id="go">شروع</button></div></div>
+<div class="hint">موس یا انگشت: حرکت راکت · در حالت دو نفره هر بازیکن نیمه‌ی خودش را کنترل می‌کند · کلیدهای جهت‌نما هم کار می‌کنند</div>
+<script>
+const W=360,H=560,PR=30,KR=15,GW=130,WIN=7,AIV=[380,650,950],ERR=[46,20,6];
+const $=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d');
+let st='idle',pad,puck,score=[0,0],ptr={},last=0,au,mode=1,lv=1,noise=0,nt=0,pauseT=0,keys={},flash=0;
+function beep(f,d=.05){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function mkPads(){pad=[{x:W/2,y:H-90,vx:0,vy:0,tx:W/2,ty:H-90},{x:W/2,y:90,vx:0,vy:0,tx:W/2,ty:90}]}
+function serve(dirY){puck={x:W/2,y:H/2,vx:(Math.random()-.5)*120,vy:dirY*160}}
+function start(){mode=+$('md').value;lv=+$('lv').value;score=[0,0];mkPads();serve(Math.random()<.5?1:-1);st='play';$('ov').style.display='none'}
+function setT(w,p){
+  const q=pad[w];q.tx=Math.max(PR,Math.min(W-PR,p.x));
+  q.ty=w===0?Math.max(H/2+PR,Math.min(H-PR,p.y)):Math.max(PR,Math.min(H/2-PR,p.y));
+}
+const pos=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}};
+cv.addEventListener('pointerdown',e=>{e.preventDefault();cv.setPointerCapture(e.pointerId);const p=pos(e),w=mode===2?(p.y<H/2?1:0):0;ptr[e.pointerId]=w;if(pad)setT(w,p)});
+cv.addEventListener('pointermove',e=>{const w=ptr[e.pointerId];if(w!==undefined&&pad)setT(w,pos(e))});
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,e=>{delete ptr[e.pointerId]}));
+addEventListener('keydown',e=>{keys[e.key]=1;if(e.key.startsWith('Arrow'))e.preventDefault()});addEventListener('keyup',e=>{delete keys[e.key]});
+function goal(w){
+  score[w]++;flash=.5;beep(w===0?880:220,.3);
+  if(score[w]>=WIN){st='over';$('ot').textContent=mode===1?(w===0?'🏆 تو بردی!':'😅 کامپیوتر برد'):'🏆 بازیکن '+(w===0?'پایین':'بالا')+' برنده شد';$('om').textContent=score[0]+' - '+score[1];$('go').textContent='دوباره';$('ov').style.display='flex';return}
+  st='goal';pauseT=1;puck={x:W/2,y:H/2,vx:0,vy:0};mkPads();pad.forEach(p=>{p.tx=p.x;p.ty=p.y});
+}
+function update(dt){
+  if(keys.ArrowLeft)pad[0].tx-=450*dt;if(keys.ArrowRight)pad[0].tx+=450*dt;if(keys.ArrowUp)pad[0].ty-=450*dt;if(keys.ArrowDown)pad[0].ty+=450*dt;
+  setT(0,{x:pad[0].tx,y:pad[0].ty});
+  if(mode===1){
+    nt-=dt;if(nt<=0){nt=.4;noise=(Math.random()-.5)*2*ERR[lv]}
+    let tx,ty;
+    if(puck.y<H/2+10){tx=puck.x+noise;ty=puck.y-22}else{tx=W/2+(puck.x-W/2)*.35+noise*.5;ty=75}
+    pad[1].tx=Math.max(PR,Math.min(W-PR,tx));pad[1].ty=Math.max(PR,Math.min(H/2-PR,ty));
+  }
+  const sub=4,sd=dt/sub;
+  for(let s=0;s<sub;s++){
+    pad.forEach((p,i)=>{
+      const dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy),ms=(i===1&&mode===1?AIV[lv]:1600)*sd,k=d>ms?ms/d:1;
+      p.vx=dx*k/sd;p.vy=dy*k/sd;p.x+=dx*k;p.y+=dy*k;
+    });
+    puck.x+=puck.vx*sd;puck.y+=puck.vy*sd;puck.vx*=.9988;puck.vy*=.9988;
+    if(puck.x<KR){puck.x=KR;puck.vx=Math.abs(puck.vx)*.95;beep(300,.03)}
+    if(puck.x>W-KR){puck.x=W-KR;puck.vx=-Math.abs(puck.vx)*.95;beep(300,.03)}
+    const inGoal=Math.abs(puck.x-W/2)<GW/2-KR*.6;
+    if(puck.y<KR&&!inGoal){puck.y=KR;puck.vy=Math.abs(puck.vy)*.95;beep(300,.03)}
+    if(puck.y>H-KR&&!inGoal){puck.y=H-KR;puck.vy=-Math.abs(puck.vy)*.95;beep(300,.03)}
+    if(puck.y<-KR)return goal(0);
+    if(puck.y>H+KR)return goal(1);
+    for(const p of pad){
+      const dx=puck.x-p.x,dy=puck.y-p.y,d=Math.hypot(dx,dy),mn=PR+KR;
+      if(d<mn&&d>0){
+        const nx=dx/d,ny=dy/d;puck.x=p.x+nx*mn;puck.y=p.y+ny*mn;
+        const rx=puck.vx-p.vx,ry=puck.vy-p.vy,dot=rx*nx+ry*ny;
+        if(dot<0){puck.vx=p.vx+(rx-2*dot*nx)*.92;puck.vy=p.vy+(ry-2*dot*ny)*.92;beep(480,.05)}
+        const sp=Math.hypot(puck.vx,puck.vy);if(sp>1100){puck.vx*=1100/sp;puck.vy*=1100/sp}
+      }
+    }
+  }
+}
+function paddle(p,c1,c2){
+  const g=x.createRadialGradient(p.x-8,p.y-8,4,p.x,p.y,PR);g.addColorStop(0,c1);g.addColorStop(1,c2);
+  x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,PR,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();
+  x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.arc(p.x,p.y,PR*.42,0,7);x.fill();
+}
+function draw(){
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#123a63');g.addColorStop(1,'#0b2745');x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(120,190,255,.7)';x.lineWidth=3;x.strokeRect(2,2,W-4,H-4);
+  x.beginPath();x.moveTo(0,H/2);x.lineTo(W,H/2);x.stroke();x.beginPath();x.arc(W/2,H/2,54,0,7);x.stroke();
+  x.fillStyle='#04121f';x.fillRect((W-GW)/2,0,GW,8);x.fillRect((W-GW)/2,H-8,GW,8);
+  x.strokeStyle='rgba(255,210,80,.8)';x.beginPath();x.arc(W/2,0,64,0,Math.PI);x.stroke();x.beginPath();x.arc(W/2,H,64,Math.PI,0);x.stroke();
+  x.fillStyle='rgba(255,255,255,.22)';x.font='bold 64px sans-serif';x.textAlign='left';x.textBaseline='middle';
+  x.fillText(score[1],18,H/2-48);x.fillText(score[0],18,H/2+48);
+  if(pad){paddle(pad[1],'#7ff0e0','#14a89b');paddle(pad[0],'#ffc27a','#e8742a')}
+  if(puck){x.fillStyle='#111';x.strokeStyle='#fff';x.lineWidth=3;x.shadowColor='#7fe0ff';x.shadowBlur=12;x.beginPath();x.arc(puck.x,puck.y,KR,0,7);x.fill();x.stroke();x.shadowBlur=0}
+  if(flash>0){x.fillStyle='rgba(255,255,255,'+flash*.5+')';x.fillRect(0,0,W,H)}
+}
+function loop(t){
+  const dt=Math.min(.033,(t-last)/1000||0);last=t;flash=Math.max(0,flash-dt);
+  if(st==='play')update(dt);
+  else if(st==='goal'){pauseT-=dt;pad.forEach(p=>{p.x+=(p.tx-p.x)*.2;p.y+=(p.ty-p.y)*.2});if(pauseT<=0){serve(score[0]>score[1]?-1:1);st='play'}}
+  draw();requestAnimationFrame(loop);
+}
+$('go').onclick=start;$('md').onchange=()=>{if(st!=='play')return;start()};
+mkPads();puck={x:W/2,y:H/2,vx:0,vy:0};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='play'){st='over';$('ot').textContent='متوقف شد';$('om').textContent=score[0]+' - '+score[1];$('go').textContent='بازی دوباره';$('ov').style.display='flex'}});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sky Raid</title>
+<style>
+:root{--bg:#10162a;--ink:#e8ecf3;--muted:#99a3b5;--card:#1b2340;--line:#384052;--btn:#ffa11f;--btnink:#2b1500;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#dde3f2;--ink:#1c2230;--muted:#5b6578;--card:#fff;--line:#b9c2d8}}
+:root[data-theme="light"]{--bg:#dde3f2;--ink:#1c2230;--muted:#5b6578;--card:#fff;--line:#b9c2d8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.25rem}
+.hud{display:flex;gap:8px;margin-bottom:6px}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:3px 12px;text-align:center;font-size:.7rem;color:var(--muted)}
+.hud b{display:block;font-size:1rem;color:var(--ink);font-family:monospace}
+.wrap{position:relative;border-radius:8px;overflow:hidden}
+.wrap::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+canvas{display:block;height:min(calc(100svh - 150px),540px);aspect-ratio:360/540;width:auto;max-width:96vw;background:#000;touch-action:none;image-rendering:pixelated}
+.ov{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,10,.8);color:#fff;text-align:center;padding:14px}
+.ov h2{margin:0;font-family:monospace;letter-spacing:2px;color:#ffa11f}.ov p{margin:0;line-height:1.8;font-size:.9rem}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:8px;padding:10px 26px;cursor:pointer;font-weight:700}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.hint{color:var(--muted);font-size:.76rem;margin-top:6px;text-align:center}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>✈️ Sky Raid (Atari Style)</h1>
+<div class="hud"><div>SCORE<b id="sc">0</b></div><div>LIVES<b id="lv">3</b></div><div>LEVEL<b id="lvl">1</b></div><div>BEST<b id="bs">0</b></div></div>
+<div class="wrap"><canvas id="c" width="360" height="540"></canvas>
+<div class="ov" id="ov"><h2 id="ot">SKY RAID</h2><p id="om">هواپیمایی به سبک آتاری!<br>انگشتت را بکش تا هواپیما حرکت کند؛ شلیک خودکار است.<br>R شلیک سریع · T سه‌تیره · S سپر</p><button id="go">START</button></div></div>
+<div class="hint">موس/انگشت یا کلیدهای ← → (و A D) برای حرکت · با نابود کردن دشمن‌ها مرحله بالا می‌رود</div>
+<script>
+const W=360,H=540,PX=3,$=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d');
+const SP={
+ me:['....X....','....X....','...XXX...','..XXXXX..','XXXXXXXXX','X.XXXXX.X','....X....','...XXX...'],
+ e0:['X.......X','XX.XXX.XX','XXXXXXXXX','.XXXXXXX.','...XXX...','....X....'],
+ e1:['..X...X..','.XXX.XXX.','XXXXXXXXX','.XXXXXXX.','..X.X.X..'],
+ e2:['XXX...XXX','XXXXXXXXX','XX.XXX.XX','XXXXXXXXX','.XXXXXXX.','..XX.XX..','...X.X...'],
+ e3:['XX..XXX..XX','XXXXXXXXXXX','XXXXXXXXXXX','.XX.XXX.XX.','...XXXXX...','....XXX....','.....X.....']
+};
+const ECOL=['#4cd964','#36d1dc','#ff5c5c','#c77dff'],EHP=[1,1,2,4],EPT=[10,20,40,100];
+let st='idle',me,bul,ebul,en,pu,pt,stars,score=0,lives=3,lvl=1,kills=0,best=0,last=0,fireT=0,spawnT=0,tgt=W/2,keys={},au,rapid=0,tri=0,shield=0,inv=0;
+try{best=+localStorage.getItem('skyraid-best')||0}catch(e){}
+function beep(f,d=.05,ty='square'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.03*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function spr(rows,cx,cy,col){x.fillStyle=col;const w=rows[0].length*PX,h=rows.length*PX;rows.forEach((r,j)=>{for(let i=0;i<r.length;i++)if(r[i]==='X')x.fillRect(Math.round(cx-w/2+i*PX),Math.round(cy-h/2+j*PX),PX,PX)})}
+function start(){me={x:W/2,y:H-60};tgt=W/2;bul=[];ebul=[];en=[];pu=[];pt=[];score=0;lives=3;lvl=1;kills=0;rapid=tri=shield=0;inv=1.5;fireT=0;spawnT=1;
+  stars=Array.from({length:40},()=>({x:Math.random()*W,y:Math.random()*H,s:20+Math.random()*60}));
+  st='play';$('ov').style.display='none';hud()}
+function hud(){$('sc').textContent=score;$('lv').textContent='♥'.repeat(Math.max(0,lives))||'-';$('lvl').textContent=lvl;$('bs').textContent=Math.max(best,score)}
+function boom(px,py,c,n=14){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=40+Math.random()*140;pt.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:.5+Math.random()*.3,c})}}
+function spawn(){
+  const r=Math.random(),mx=Math.min(3,Math.floor(lvl/2));let t=0;
+  if(r<.45)t=0;else if(r<.7)t=1;else if(r<.9)t=Math.min(2,mx+0);else t=mx>=2?3:1;
+  if(t===2&&lvl<2)t=1;
+  const w=(SP['e'+t][0].length)*PX;
+  en.push({t,x:w/2+Math.random()*(W-w),y:-20,hp:EHP[t],ph:Math.random()*6,sy:0,ft:1+Math.random()});
+}
+function over(){st='over';beep(130,.5,'sawtooth');boom(me.x,me.y,'#ffa11f',30);
+  if(score>best){best=score;try{localStorage.setItem('skyraid-best',best)}catch(e){}}
+  $('ot').textContent='GAME OVER';$('om').innerHTML='SCORE: '+score+' · LEVEL: '+lvl;$('go').textContent='AGAIN';$('ov').style.display='flex'}
+function hit(){
+  if(inv>0)return;
+  if(shield>0){shield=0;inv=1;beep(300,.1);return}
+  lives--;inv=1.8;boom(me.x,me.y,'#ffa11f',20);beep(150,.25,'sawtooth');hud();if(lives<=0)over();
+}
+function update(dt){
+  const dx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0);if(dx)tgt+=dx*320*dt;
+  tgt=Math.max(20,Math.min(W-20,tgt));me.x+=(tgt-me.x)*Math.min(1,dt*14);
+  inv=Math.max(0,inv-dt);rapid=Math.max(0,rapid-dt);tri=Math.max(0,tri-dt);shield=Math.max(0,shield-dt);
+  fireT-=dt;if(fireT<=0){fireT=rapid>0?.11:.24;bul.push({x:me.x,y:me.y-16});if(tri>0){bul.push({x:me.x-12,y:me.y-8,vx:-60});bul.push({x:me.x+12,y:me.y-8,vx:60})}beep(900,.02)}
+  bul.forEach(b=>{b.y-=520*dt;b.x+=(b.vx||0)*dt});bul=bul.filter(b=>b.y>-10);
+  ebul.forEach(b=>{b.y+=b.vy*dt;b.x+=b.vx*dt});ebul=ebul.filter(b=>b.y<H+10&&b.x>-10&&b.x<W+10);
+  spawnT-=dt;if(spawnT<=0){spawn();spawnT=Math.max(.35,1.2-lvl*.07)}
+  en.forEach(e=>{
+    e.ph+=dt;
+    if(e.t===0)e.y+=(90+lvl*8)*dt;
+    else if(e.t===1){e.y+=(80+lvl*6)*dt;e.x+=Math.sin(e.ph*3)*110*dt}
+    else if(e.t===2){if(e.y<110)e.y+=90*dt;else e.x+=Math.sin(e.ph*1.5)*60*dt;e.ft-=dt;if(e.ft<=0){e.ft=Math.max(.7,1.6-lvl*.06);const a=Math.atan2(me.y-e.y,me.x-e.x);ebul.push({x:e.x,y:e.y+10,vx:Math.cos(a)*150,vy:Math.sin(a)*150})}}
+    else{e.y+=(e.y<90?60:18)*dt;e.x+=Math.sin(e.ph)*50*dt;e.ft-=dt;if(e.ft<=0){e.ft=1.1;[-.35,0,.35].forEach(d=>ebul.push({x:e.x,y:e.y+14,vx:Math.sin(d)*140,vy:Math.cos(d)*140}))}}
+  });
+  bul.forEach(b=>en.forEach(e=>{
+    const w=SP['e'+e.t][0].length*PX/2,h=SP['e'+e.t].length*PX/2;
+    if(!b.d&&Math.abs(b.x-e.x)<w&&Math.abs(b.y-e.y)<h){b.d=1;e.hp--;beep(500,.03);if(e.hp<=0){e.dead=1;score+=EPT[e.t];kills++;boom(e.x,e.y,ECOL[e.t]);beep(200,.12,'sawtooth');
+      if(Math.random()<(e.t===3?.9:.07))pu.push({x:e.x,y:e.y,k:'RTS'[Math.floor(Math.random()*3)]});
+      if(kills%15===0){lvl++;beep(900,.25,'triangle')}hud()}}
+  }));
+  bul=bul.filter(b=>!b.d);en=en.filter(e=>!e.dead&&e.y<H+30);
+  en.forEach(e=>{const w=SP['e'+e.t][0].length*PX/2+8,h=SP['e'+e.t].length*PX/2+6;if(Math.abs(e.x-me.x)<w&&Math.abs(e.y-me.y)<h){e.dead=1;boom(e.x,e.y,ECOL[e.t]);hit()}});
+  ebul.forEach(b=>{if(Math.abs(b.x-me.x)<9&&Math.abs(b.y-me.y)<10){b.d=1;hit()}});ebul=ebul.filter(b=>!b.d);
+  pu.forEach(p=>{p.y+=70*dt;if(Math.abs(p.x-me.x)<18&&Math.abs(p.y-me.y)<18){p.d=1;beep(800,.12,'triangle');if(p.k==='R')rapid=8;else if(p.k==='T')tri=8;else shield=6;score+=15;hud()}});
+  pu=pu.filter(p=>!p.d&&p.y<H+10);
+}
+function draw(t){
+  x.fillStyle='#050a1c';x.fillRect(0,0,W,H);
+  if(stars)stars.forEach(s=>{if(st==='play')s.y=(s.y+s.s*.016)%H;x.fillStyle=s.s>50?'#fff':'#6c7aa8';x.fillRect(s.x,s.y,2,2)});
+  if(!me)return;
+  bul.forEach(b=>{x.fillStyle='#ffe14d';x.fillRect(b.x-1,b.y-5,3,9)});
+  ebul.forEach(b=>{x.fillStyle='#ff6b6b';x.fillRect(b.x-2,b.y-2,5,5)});
+  en.forEach(e=>spr(SP['e'+e.t],e.x,e.y,ECOL[e.t]));
+  pu.forEach(p=>{x.fillStyle=p.k==='R'?'#ff8a3d':p.k==='T'?'#ffe14d':'#4fc3f7';x.fillRect(p.x-9,p.y-9,18,18);x.fillStyle='#000';x.font='bold 13px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText(p.k,p.x,p.y+1)});
+  if(st!=='over'&&(inv<=0||Math.floor(t/90)%2)){spr(SP.me,me.x,me.y,'#ffa11f');x.fillStyle='#ff4d2e';x.fillRect(me.x-2,me.y+14,5,3+Math.floor(t/80)%3*2)}
+  if(shield>0){x.strokeStyle='#4fc3f7';x.lineWidth=2;x.beginPath();x.arc(me.x,me.y,22,0,7);x.stroke()}
+  pt.forEach(p=>{x.globalAlpha=Math.max(0,p.l*2);x.fillStyle=p.c;x.fillRect(p.x,p.y,3,3)});x.globalAlpha=1;
+}
+function loop(t){
+  const dt=Math.min(.04,(t-last)/1000||0);last=t;
+  if(st==='play')update(dt);
+  if(pt)pt.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt});if(pt)pt=pt.filter(p=>p.l>0);
+  draw(t);requestAnimationFrame(loop);
+}
+function mv(e){const r=cv.getBoundingClientRect();tgt=(e.clientX-r.left)/r.width*W}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();mv(e)});cv.addEventListener('pointermove',mv);
+addEventListener('keydown',e=>{keys[e.key]=1;if(e.key.startsWith('Arrow'))e.preventDefault();if(e.key===' '&&st!=='play')$('go').click()});addEventListener('keyup',e=>{delete keys[e.key]});
+$('go').onclick=start;$('bs').textContent=best;
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='play'){st='pause';$('ot').textContent='PAUSED';$('om').textContent='';$('go').textContent='RESUME';$('ov').style.display='flex';$('go').onclick=()=>{st='play';$('ov').style.display='none';$('go').onclick=start}}});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UNO</title>
+<style>
+:root{--bg:#eef3e0;--ink:#26301a;--muted:#667a4d;--card:#fff;--line:rgba(60,80,30,.25);--btn:#14a89b;--btnink:#fff;--felt:#2f7d52;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d;--felt:#1c4a33}}
+:root[data-theme="dark"]{--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d;--felt:#1c4a33}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#stt{min-height:1.7em;font-weight:700;margin:4px 0;text-align:center}
+.table{position:relative;width:min(96vw,520px);background:var(--felt);border-radius:16px;padding:10px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#ops{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+.op{background:rgba(0,0,0,.28);color:#fff;border-radius:10px;padding:5px 12px;font-size:.8rem;text-align:center}
+.op.on{outline:3px solid #ffd23f}
+.op b{display:block}
+.mid{display:flex;align-items:center;justify-content:center;gap:18px;margin:10px 0}
+.cd{width:54px;height:80px;border-radius:9px;border:3px solid #fff;display:grid;place-items:center;font-weight:800;font-size:1.25rem;color:#fff;flex:none;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.35);font-family:Arial,sans-serif;padding:0;cursor:default}
+.cd.R{background:#e53935}.cd.Y{background:#fdd835;color:#222}.cd.G{background:#43a047}.cd.B{background:#1e88e5}
+.cd.W{background:conic-gradient(#e53935 0 25%,#fdd835 0 50%,#43a047 0 75%,#1e88e5 0)}
+.cd.W span{background:rgba(0,0,0,.55);border-radius:6px;padding:0 5px}
+.cd.big{width:76px;height:112px;font-size:1.9rem}
+.cd.back{background:#222;color:#e53935;font-size:1rem;cursor:pointer}
+.cd.back.big{cursor:pointer}
+.cd.can{transform:translateY(-8px);cursor:pointer;box-shadow:0 6px 12px rgba(0,0,0,.45)}
+.cd.no{opacity:.5}
+#col{width:26px;height:26px;border-radius:50%;border:3px solid #fff;background:#888}
+#hand{display:flex;gap:6px;overflow-x:auto;padding:14px 4px 8px;margin-top:6px;direction:ltr;min-height:112px}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,18,8,.86);color:#fff;border-radius:16px;text-align:center;padding:14px;z-index:5}
+.ov h2{margin:0}
+.cc{display:flex;gap:10px}
+.cc button{width:54px;height:54px;border-radius:50%;border:3px solid #fff;cursor:pointer}
+.hint{color:var(--muted);font-size:.76rem;margin-top:10px;text-align:center;max-width:520px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🃏 UNO</h1>
+<div class="row">
+  <select id="cp" aria-label="تعداد کامپیوتر"><option value="1">۱ کامپیوتر</option><option value="2">۲ کامپیوتر</option><option value="3" selected>۳ کامپیوتر</option></select>
+  <button class="b pr" id="nw">بازی جدید</button>
+</div>
+<div id="stt"></div>
+<div class="table">
+  <div id="ops"></div>
+  <div class="mid"><button class="cd big back" id="dk" aria-label="کارت کشیدن">UNO</button><div class="cd big" id="top"></div><div id="col" title="رنگ فعلی"></div></div>
+  <div class="row"><button class="b pr" id="pass" style="display:none">رد شدن</button></div>
+  <div id="hand"></div>
+  <div class="ov" id="ov"><h2 id="ot"></h2><div class="cc" id="cc" style="display:none"></div><button class="b pr" id="ob">دوباره</button></div>
+</div>
+<div class="hint">کارتی هم‌رنگ یا هم‌عدد کارت وسط بازی کن. وایلد 🌈 رنگ را عوض می‌کند. اگر کارتی نداری، از دسته‌ی UNO بکش. اولین نفری که کارت‌هایش تمام شود برنده است.</div>
+<script>
+const $=i=>document.getElementById(i);
+const CL={R:'#e53935',Y:'#fdd835',G:'#43a047',B:'#1e88e5'},SYM=v=>({S:'⊘',R:'⇄',D:'+2',W:'🌈',F:'+4'}[v]||v);
+let deck,disc,hands,cur,dir,color,n,over=true,drawn=null,names,au,pendingWild=null;
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function mkDeck(){const d=[];for(const c of'RYGB'){d.push({c,v:'0'});for(let v=1;v<=9;v++)d.push({c,v:''+v},{c,v:''+v});for(const v of['S','R','D'])d.push({c,v},{c,v})}for(let i=0;i<4;i++)d.push({c:'W',v:'W'},{c:'W',v:'F'});return shuffle(d)}
+function draw1(){if(!deck.length){const t=disc.pop();deck=shuffle(disc);disc=[t]}return deck.pop()||null}
+const topC=()=>disc[disc.length-1];
+const can=c=>c.c==='W'||c.c===color||c.v===topC().v;
+const ord=c=>'RYGBW'.indexOf(c.c)*20+(isNaN(c.v)?15:+c.v);
+function msg(t){$('stt').textContent=t}
+function give(p,k){for(let i=0;i<k;i++){const c=draw1();if(c)hands[p].push(c)}if(p===0)hands[0].sort((a,b)=>ord(a)-ord(b))}
+function setup(){
+  n=1+ +$('cp').value;names=['تو'].concat(Array.from({length:n-1},(_,i)=>'کامپیوتر '+(i+1)));
+  deck=mkDeck();disc=[];hands=Array.from({length:n},()=>[]);
+  for(let p=0;p<n;p++)give(p,7);
+  let c;do{c=draw1();if(c.c==='W'||isNaN(c.v))deck.unshift(c)}while(c.c==='W'||isNaN(c.v));
+  disc.push(c);color=c.c;cur=0;dir=1;over=false;drawn=null;pendingWild=null;
+  $('ov').style.display='none';$('cc').style.display='none';$('ob').style.display='';
+  render();msg('نوبت تو');
+}
+function render(){
+  $('ops').innerHTML=hands.slice(1).map((h,i)=>'<div class="op'+(cur===i+1?' on':'')+'"><b>'+names[i+1]+'</b>🂠 × '+h.length+'</div>').join('');
+  const t=topC();$('top').className='cd big '+t.c;$('top').innerHTML='<span>'+SYM(t.v)+'</span>';
+  $('col').style.background=CL[color];
+  const myTurn=cur===0&&!over&&!pendingWild;
+  $('hand').innerHTML=hands[0].map((c,i)=>{
+    const ok=myTurn&&can(c)&&(!drawn||c===drawn);
+    return '<button class="cd '+c.c+(ok?' can':' no')+'" data-i="'+i+'" aria-label="'+SYM(c.v)+'"><span>'+SYM(c.v)+'</span></button>';
+  }).join('');
+  $('pass').style.display=drawn&&myTurn?'':'none';
+}
+function advance(k){cur=((cur+dir*k)%n+n)%n}
+function play(p,c,col){
+  hands[p].splice(hands[p].indexOf(c),1);disc.push(c);color=c.c==='W'?col:c.c;drawn=null;beep(420+(p?0:100));
+  if(hands[p].length===1)msg('UNO! '+names[p]);
+  if(!hands[p].length)return win(p);
+  let k=1;const nx=((cur+dir)%n+n)%n;
+  if(c.v==='S')k=2;
+  else if(c.v==='R'){dir=-dir;if(n===2)k=2}
+  else if(c.v==='D'){give(nx,2);k=2;msg(names[nx]+' دو کارت می‌کشد')}
+  else if(c.v==='F'){give(nx,4);k=2;msg(names[nx]+' چهار کارت می‌کشد')}
+  advance(k);render();nextTurn();
+}
+function nextTurn(){
+  if(over)return;
+  if(cur===0){if(!$('stt').textContent.includes('می‌کشد'))msg('نوبت تو');return}
+  setTimeout(ai,950);
+}
+function ai(){
+  if(over)return;const h=hands[cur];let pl=h.filter(can);
+  if(!pl.length){const c=draw1();if(c){h.push(c);if(can(c))pl=[c]}}
+  if(!pl.length){msg(names[cur]+' رد شد');advance(1);render();nextTurn();return}
+  const nxt=hands[((cur+dir)%n+n)%n],plain=pl.filter(c=>c.c!=='W'),act=plain.filter(c=>isNaN(c.v));
+  let c=(nxt.length<=2&&act.length)?act[0]:plain.length?plain[Math.floor(Math.random()*plain.length)]:(pl.find(x=>x.v==='W')||pl[0]);
+  const cnt={R:0,Y:0,G:0,B:0};h.forEach(x=>{if(x.c!=='W')cnt[x.c]++});
+  const col=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  msg(names[cur]+' بازی کرد '+SYM(c.v));play(cur,c,col);
+}
+function win(p){
+  over=true;render();beep(p===0?1000:200,.4);
+  let w=0;try{w=+localStorage.getItem('uno-wins')||0;if(p===0){w++;localStorage.setItem('uno-wins',w)}}catch(e){}
+  $('ot').textContent=p===0?'🏆 تو بردی! (برد‌ها: '+w+')':names[p]+' برنده شد';
+  $('cc').style.display='none';$('ob').style.display='';$('ov').style.display='flex';msg('بازی تمام شد');
+}
+$('hand').addEventListener('click',e=>{
+  const b=e.target.closest('.cd');if(!b||cur!==0||over||pendingWild)return;
+  const c=hands[0][+b.dataset.i];if(!can(c)||(drawn&&c!==drawn))return;
+  if(c.c==='W'){
+    pendingWild=c;$('ot').textContent='رنگ را انتخاب کن';$('ob').style.display='none';
+    $('cc').innerHTML=Object.keys(CL).map(k=>'<button style="background:'+CL[k]+'" data-c="'+k+'" aria-label="'+k+'"></button>').join('');
+    $('cc').style.display='flex';$('ov').style.display='flex';return;
+  }
+  play(0,c);
+});
+$('cc').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b||!pendingWild)return;
+  const c=pendingWild;pendingWild=null;$('ov').style.display='none';$('cc').style.display='none';play(0,c,b.dataset.c);
+});
+$('dk').onclick=()=>{
+  if(cur!==0||over||drawn||pendingWild)return;
+  const c=draw1();if(!c){advance(1);render();nextTurn();return}
+  hands[0].push(c);hands[0].sort((a,b)=>ord(a)-ord(b));beep(300);
+  if(can(c)){drawn=c;msg('می‌توانی این کارت را بازی کنی یا رد شوی');render()}
+  else{msg('کارت قابل بازی نبود');render();setTimeout(()=>{advance(1);render();nextTurn()},800)}
+};
+$('pass').onclick=()=>{if(cur!==0||!drawn)return;drawn=null;advance(1);render();nextTurn()};
+$('nw').onclick=setup;$('ob').onclick=setup;$('cp').onchange=setup;
+setup();
+</script>
+</body>
+</html>

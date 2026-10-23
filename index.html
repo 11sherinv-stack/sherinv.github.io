@@ -76,6 +76,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 .cr p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
 #toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);left:50%;transform:translateX(-50%);background:var(--head);color:#f1f8d0;padding:10px 18px;border-radius:20px;z-index:50;font-size:.88rem;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center}
 #toast.on{opacity:1}
+.cw{position:relative}.hrt{position:absolute;top:0;right:4px;z-index:3;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.9);color:#e53935;font-size:1.25rem;line-height:1;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}.hrt:active{transform:scale(.88)}
 .saver *{animation:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -87,10 +88,12 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="hb"><button class="ib" id="mu" aria-label="Music">🔊</button><button class="ib" id="mb" aria-label="Menu">☰ Menu</button></div>
 </header>
 <nav id="menu">
-  <button data-s="games">🎮 Games</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
+  <button data-s="games">🎮 Games</button><button data-s="favorites">❤️ Favorite Games</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
 </nav>
 <main>
 <section id="games"><h2>Games</h2><p class="sub">یک صفحه‌ی گرامافون را انتخاب کن تا بازی در تب جدید شروع شود.</p><div class="grid" id="gr"></div></section>
+
+<section id="favorites" hidden><h2>Favorite Games</h2><p class="sub">بازی‌هایی که با ❤ علامت زده‌ای اینجا جمع می‌شوند.</p><div class="grid" id="fgr"></div><p class="sub" id="fempty" style="text-align:center;margin-top:40px">هنوز بازی مورد علاقه‌ای نداری. روی ♡ کنار هر بازی بزن.</p></section>
 
 <section id="account" hidden>
   <h2>Account</h2><p class="sub">اطلاعات فقط روی همین دستگاه ذخیره می‌شود.</p>
@@ -128,7 +131,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="box cr"><div class="a" style="background:var(--head);color:#d9f24a">M</div><div><h3>Maz</h3><p>از سازندگان S loop</p></div></div>
 </section>
 </main>
-<div id="toast"></div><noscript><ul><li><a href="snake.html">Snake Advanced</a></li><li><a href="arena.html">Arena Battle</a></li><li><a href="2048.html">2048</a></li><li><a href="tetris.html">Tetris</a></li><li><a href="dino.html">Dino Run</a></li><li><a href="flappy.html">Flappy Bird Advanced</a></li><li><a href="maze.html">Maze</a></li><li><a href="sudoku.html">Sudoku</a></li><li><a href="candy.html">Candy Match</a></li><li><a href="breakout.html">Breakout</a></li><li><a href="tictactoe.html">Tic Tac Toe</a></li><li><a href="chess.html">Chess</a></li><li><a href="memory.html">Memory Cards</a></li><li><a href="ludo.html">Ludo</a></li><li><a href="snakeladder.html">Snakes &amp; Ladders</a></li></ul></noscript>
+<div id="toast"></div><noscript><ul><li><a href="snake.html">Snake Advanced</a></li><li><a href="arena.html">Arena Battle</a></li><li><a href="2048.html">2048</a></li><li><a href="tetris.html">Tetris</a></li><li><a href="dino.html">Dino Run</a></li><li><a href="flappy.html">Flappy Bird Advanced</a></li><li><a href="maze.html">Maze</a></li><li><a href="sudoku.html">Sudoku</a></li><li><a href="candy.html">Candy Match</a></li><li><a href="breakout.html">Breakout</a></li><li><a href="tictactoe.html">Tic Tac Toe</a></li><li><a href="chess.html">Chess</a></li><li><a href="memory.html">Memory Cards</a></li><li><a href="ludo.html">Ludo</a></li><li><a href="snakeladder.html">Snakes &amp; Ladders</a></li><li><a href="uno.html">UNO</a></li><li><a href="airhockey.html">Air Hockey</a></li><li><a href="skyraid.html">Sky Raid</a></li></ul></noscript>
 <script>
 const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -151,13 +154,23 @@ const GM=[
 {id:'chess',n:'Chess',u:'chess.html',a:[0,1,2,3].map(r=>[0,1,2,3].map(c=>`<rect x="${c*25}" y="${r*25}" width="25" height="25" fill="${(r+c)%2?'#779556':'#e9edcc'}"/>`).join('')).join('')+T(50,68,'♞',54,'#161616')},
 {id:'ludo',n:'Ludo',u:'ludo.html',a:'<rect width="100" height="100" fill="#fff"/><rect width="40" height="40" fill="#e53935"/><rect x="60" width="40" height="40" fill="#43a047"/><rect x="60" y="60" width="40" height="40" fill="#f2b700"/><rect y="60" width="40" height="40" fill="#1e88e5"/><rect x="40" width="20" height="100" fill="#eee"/><rect y="40" width="100" height="20" fill="#eee"/><path d="M40 40L40 60L50 50Z" fill="#e53935"/><path d="M40 40L60 40L50 50Z" fill="#43a047"/><path d="M60 40L60 60L50 50Z" fill="#f2b700"/><path d="M40 60L60 60L50 50Z" fill="#1e88e5"/><g stroke="#222" stroke-width="1.5"><circle cx="14" cy="14" r="5" fill="#e53935"/><circle cx="86" cy="14" r="5" fill="#43a047"/><circle cx="86" cy="86" r="5" fill="#f2b700"/><circle cx="14" cy="86" r="5" fill="#1e88e5"/></g>'},
 {id:'snakeladder',n:'Snakes & Ladders',u:'snakeladder.html',a:[0,1,2,3,4].map(r=>[0,1,2,3,4].map(c=>`<rect x="${c*20}" y="${r*20}" width="20" height="20" fill="${(r+c)%2?'#ffe9b8':'#fff4d6'}"/>`).join('')).join('')+'<path d="M22 84L42 28M34 88L54 32" stroke="#8d5a2b" stroke-width="3" stroke-linecap="round"/><path d="M26 74L38 78M31 60L43 64M36 46L48 50" stroke="#8d5a2b" stroke-width="2"/><path d="M80 12C58 28 92 42 68 58S72 80 80 92" fill="none" stroke="#43a047" stroke-width="7" stroke-linecap="round"/><circle cx="80" cy="12" r="6" fill="#43a047"/><circle cx="78" cy="11" r="1.6" fill="#fff"/><circle cx="83" cy="11" r="1.6" fill="#fff"/>'},
+{id:'uno',n:'UNO',u:'uno.html',a:'<rect width="100" height="100" fill="#26262e"/><g transform="rotate(-20 50 70)"><rect x="28" y="22" width="34" height="50" rx="5" fill="#1e88e5" stroke="#fff" stroke-width="2"/></g><g><rect x="33" y="20" width="34" height="50" rx="5" fill="#fdd835" stroke="#fff" stroke-width="2"/></g><g transform="rotate(20 50 70)"><rect x="38" y="22" width="34" height="50" rx="5" fill="#e53935" stroke="#fff" stroke-width="2"/>'+T(55,52,'+2',16,'#fff')+'</g>'+T(50,86,'UNO',14,'#fff')},
+{id:'airhockey',n:'Air Hockey',u:'airhockey.html',a:'<rect width="100" height="100" fill="#0f3354"/><path d="M0 50H100" stroke="#6fb4ff" stroke-width="2"/><circle cx="50" cy="50" r="14" fill="none" stroke="#6fb4ff" stroke-width="2"/><circle cx="38" cy="26" r="11" fill="#2fd5c3" stroke="#fff" stroke-width="2"/><circle cx="38" cy="26" r="5" fill="#16a89b"/><circle cx="62" cy="74" r="11" fill="#ffa04d" stroke="#fff" stroke-width="2"/><circle cx="62" cy="74" r="5" fill="#e8742a"/><circle cx="56" cy="46" r="5" fill="#111" stroke="#fff" stroke-width="1.5"/>'},
+{id:'skyraid',n:'Sky Raid',u:'skyraid.html',a:'<rect width="100" height="100" fill="#050a1c"/><g fill="#fff"><rect x="12" y="20" width="2" height="2"/><rect x="80" y="30" width="2" height="2"/><rect x="25" y="62" width="2" height="2"/><rect x="88" y="70" width="2" height="2"/><rect x="60" y="12" width="2" height="2"/></g><g fill="#4cd964"><rect x="24" y="18" width="18" height="4"/><rect x="28" y="22" width="10" height="4"/><rect x="31" y="26" width="4" height="4"/></g><g fill="#ff5c5c"><rect x="60" y="28" width="18" height="4"/><rect x="63" y="32" width="12" height="4"/></g><g fill="#ffe14d"><rect x="49" y="40" width="3" height="8"/><rect x="49" y="52" width="3" height="8"/></g><g fill="#ffa11f"><rect x="47" y="66" width="7" height="20"/><rect x="34" y="74" width="33" height="7"/><rect x="42" y="84" width="17" height="4"/></g>'},
 {id:'memory',n:'Memory Cards',u:'memory.html',a:'<rect width="100" height="100" fill="#e4edb9"/><rect x="10" y="10" width="38" height="38" rx="6" fill="#fff"/><rect x="52" y="10" width="38" height="38" rx="6" fill="#14a89b"/><rect x="10" y="52" width="38" height="38" rx="6" fill="#14a89b"/><rect x="52" y="52" width="38" height="38" rx="6" fill="#fff"/>'+T(29,38,'🐼',22,'#000')+T(71,38,'?',22,'#fff')+T(29,80,'?',22,'#fff')+T(71,80,'🐼',22,'#000')}
 ];
-$('gr').innerHTML=GM.map(g=>`<a class="card" href="${g.u}" target="_blank" rel="noopener" data-id="${g.id}"><div class="disc"><div class="lbl"><svg viewBox="0 0 100 100" aria-hidden="true">${g.a}</svg></div><i></i></div><div class="nm">${g.n}</div></a>`).join('');
+let fav=LS.get('sl-fav',[]);
+const cardHTML=g=>`<div class="cw"><button class="hrt" data-f="${g.id}" aria-label="Favorite ${g.n}" aria-pressed="${fav.includes(g.id)}">${fav.includes(g.id)?'♥':'♡'}</button><a class="card" href="${g.u}" target="_blank" rel="noopener" data-id="${g.id}"><div class="disc"><div class="lbl"><svg viewBox="0 0 100 100" aria-hidden="true">${g.a}</svg></div><i></i></div><div class="nm">${g.n}</div></a></div>`;
+function renderFav(){const L=GM.filter(g=>fav.includes(g.id));$('fgr').innerHTML=L.map(cardHTML).join('');$('fempty').hidden=L.length>0}
+function toggleFav(id){
+  fav=fav.includes(id)?fav.filter(k=>k!==id):fav.concat(id);LS.set('sl-fav',fav);const on=fav.includes(id);
+  document.querySelectorAll('.hrt[data-f="'+id+'"]').forEach(h=>{h.textContent=on?'♥':'♡';h.setAttribute('aria-pressed',on)});
+  renderFav();toast(on?'به Favorite Games اضافه شد ❤️':'از Favorite Games حذف شد');
+}
+document.addEventListener('click',e=>{const h=e.target.closest('.hrt');if(h){e.preventDefault();toggleFav(h.dataset.f)}});
+$('gr').innerHTML=GM.map(cardHTML).join('');renderFav();
 let gv=LS.get('sl-gv',80),mv=LS.get('sl-mv',40),musicOn=LS.get('sl-music',true),stats=LS.get('sl-stats',{}),P=LS.get('sl-profile',{name:'',email:'',phone:'',bio:'',avatar:''});
-document.querySelectorAll('.card').forEach(a=>a.addEventListener('click',()=>{
-  const g=GM.find(x=>x.id===a.dataset.id);a.href=g.u+'#v'+gv;LS.set('sl-pending',{id:g.id,t:Date.now()});
-}));
+document.addEventListener('click',e=>{const a=e.target.closest('.card');if(!a)return;const g=GM.find(x=>x.id===a.dataset.id);a.href=g.u+'#v'+gv;LS.set('sl-pending',{id:g.id,t:Date.now()})});
 function settle(){
   const p=LS.get('sl-pending',null);if(!p)return;
   const s=Math.min((Date.now()-p.t)/1000,10800);
@@ -174,7 +187,7 @@ $('rs').onclick=()=>{stats={};LS.set('sl-stats',stats);renderStats();toast('آم
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(au)au.suspend()}else{settle();if(au&&musicOn)au.resume()}});
 addEventListener('focus',settle);
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
-const SEC=['games','account','category','settings','creator'];
+const SEC=['games','favorites','account','category','settings','creator'];
 function go(n){SEC.forEach(s=>$(s).hidden=s!==n);document.querySelectorAll('#menu button').forEach(b=>b.classList.toggle('on',b.dataset.s===n));$('menu').classList.remove('open');scrollTo(0,0)}
 document.querySelectorAll('#menu button').forEach(b=>b.onclick=()=>go(b.dataset.s));
 $('mb').onclick=e=>{e.stopPropagation();$('menu').classList.toggle('open')};
