@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snakes &amp; Ladders</title>
+<style>
+:root{--bg:#eef3e0;--ink:#26301a;--muted:#667a4d;--card:#fff;--line:rgba(60,80,30,.25);--btn:#14a89b;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d}}
+:root[data-theme="dark"]{--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#stt{min-height:1.7em;font-weight:700;margin:6px 0}
+.wrap{position:relative;width:min(94vw,480px)}
+canvas{display:block;width:100%;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+#dice{width:84px;height:84px;font-size:3.2rem;line-height:1;border:0;border-radius:18px;background:var(--card);box-shadow:0 4px 10px rgba(0,0,0,.25);cursor:pointer;margin-top:10px;color:var(--ink)}
+#dice:disabled{opacity:.5;cursor:default}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,18,8,.82);color:#fff;border-radius:10px;text-align:center;padding:14px}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.76rem;margin-top:10px;text-align:center;max-width:480px}
+</style>
+</head>
+<body>
+<h1>🐍 مارپله (Snakes &amp; Ladders)</h1>
+<div class="row">
+  <select id="md" aria-label="تعداد بازیکن"><option value="1">۱ نفره (با کامپیوتر)</option><option value="2">۲ نفره</option><option value="4">۴ نفره</option></select>
+  <select id="cp" aria-label="تعداد کامپیوتر"><option value="1" selected>۱ کامپیوتر</option><option value="2">۲ کامپیوتر</option><option value="3">۳ کامپیوتر</option></select>
+  <button class="b pr" id="nw">بازی جدید</button>
+</div>
+<div id="stt"></div>
+<div class="wrap"><canvas id="c"></canvas><div class="ov" id="ov"><h2 id="ot"></h2><button class="b pr" id="ob">دوباره</button></div></div>
+<button id="dice" aria-label="انداختن تاس">🎲</button>
+<div class="hint">نردبان تو را بالا می‌برد و مار پایین می‌آورد. برای رسیدن به ۱۰۰ باید عدد دقیق بیاوری. آوردن ۶ یک نوبت اضافه می‌دهد.</div>
+<script>
+const $=i=>document.getElementById(i),S=40,W=400,H=432,cv=$('c'),x=cv.getContext('2d');cv.width=W;cv.height=H;
+const SN={16:6,47:26,49:11,56:53,62:19,64:60,87:24,93:73,95:75,98:78},LD={1:38,4:14,9:31,21:42,28:84,36:44,51:67,71:91,80:100};
+const PC=[{n:'قرمز',c:'#e53935'},{n:'آبی',c:'#1e88e5'},{n:'سبز',c:'#43a047'},{n:'زرد',c:'#f9a825'}],FACES='⚀⚁⚂⚃⚄⚅',OFF=[[-8,-8],[8,-8],[-8,8],[8,8]];
+let pl,ti,cur,ph='over',au;
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function sq(n){const i=n-1,row=i/10|0,col=row%2?9-i%10:i%10;return[col*S+S/2,(9-row)*S+S/2]}
+function target(p){return p.pos===0?[50+p.ci*95,10*S+16]:(()=>{const[a,b]=sq(p.pos);return[a+OFF[p.ci][0],b+OFF[p.ci][1]]})()}
+function setup(){
+  const m=+$('md').value,n=m===1?1+ +$('cp').value:m;
+  const order=m===2?[0,1]:[0,1,2,3];
+  pl=order.slice(0,n).map((ci,k)=>({ci,human:m===1?k===0:true,pos:0,dx:0,dy:0}));
+  pl.forEach(p=>{[p.dx,p.dy]=target(p)});
+  ti=0;$('ov').style.display='none';$('cp').style.display=m===1?'':'none';start();
+}
+function msg(t,ci){$('stt').innerHTML=(ci!=null?'<span style="color:'+PC[ci].c+'">●</span> ':'')+t}
+function start(){
+  cur=pl[ti];ph='roll';msg('نوبت '+PC[cur.ci].n+(cur.human?' — تاس را بینداز':' (کامپیوتر)'),cur.ci);
+  $('dice').disabled=!cur.human;if(!cur.human)setTimeout(roll,800);
+}
+function roll(){
+  if(ph!=='roll')return;ph='anim';$('dice').disabled=true;let n=0;
+  const iv=setInterval(()=>{$('dice').textContent=FACES[Math.floor(Math.random()*6)];beep(300+n*20,.03);
+    if(++n>7){clearInterval(iv);const d=1+Math.floor(Math.random()*6);$('dice').textContent=FACES[d-1];go(d)}},70);
+}
+function next(extra){if(!extra)ti=(ti+1)%pl.length;start()}
+function go(d){
+  const p=cur;
+  if(p.pos+d>100){msg('عدد زیاد است — همان‌جا می‌مانی',p.ci);setTimeout(()=>next(d===6),900);return}
+  const to=p.pos+d;
+  const iv=setInterval(()=>{
+    p.pos++;beep(380+p.pos*3,.04);
+    if(p.pos>=to){clearInterval(iv);setTimeout(()=>{
+      const dest=LD[p.pos]||SN[p.pos];
+      if(dest){msg(LD[p.pos]?'نردبان! ⬆️':'مار! 🐍',p.ci);beep(LD[p.pos]?900:150,.25);setTimeout(()=>{p.pos=dest;setTimeout(fin,650)},450)}
+      else fin();
+    },250)}
+  },180);
+  function fin(){
+    if(p.pos===100){ph='over';$('ot').textContent='🏆 '+PC[p.ci].n+' برنده شد!';$('ov').style.display='flex';msg('بازی تمام شد',p.ci);beep(1000,.4);return}
+    next(d===6);
+  }
+}
+function drawBoard(){
+  x.fillStyle='#fff8e1';x.fillRect(0,0,W,H);
+  for(let n=1;n<=100;n++){
+    const[cx,cy]=sq(n),i=n-1,row=i/10|0,col=row%2?9-i%10:i%10;
+    x.fillStyle=n===100?'#ffd54f':(row+col)%2?'#ffe9b8':'#fff4d6';x.fillRect(cx-S/2,cy-S/2,S,S);
+    x.strokeStyle='rgba(120,90,30,.25)';x.lineWidth=1;x.strokeRect(cx-S/2+.5,cy-S/2+.5,S-1,S-1);
+    x.fillStyle='rgba(90,60,20,.7)';x.font='10px sans-serif';x.textAlign='left';x.textBaseline='top';x.fillText(n===100?'🏁100':n,cx-S/2+3,cy-S/2+2);
+  }
+  x.fillStyle='rgba(90,60,20,.12)';x.fillRect(0,10*S,W,H-10*S);
+  Object.entries(LD).forEach(([a,b])=>{
+    const[x1,y1]=sq(+a),[x2,y2]=sq(b),dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,nx=-uy*6,ny=ux*6;
+    x.strokeStyle='#8d5a2b';x.lineWidth=3;x.lineCap='round';
+    x.beginPath();x.moveTo(x1+nx,y1+ny);x.lineTo(x2+nx,y2+ny);x.moveTo(x1-nx,y1-ny);x.lineTo(x2-nx,y2-ny);x.stroke();
+    x.lineWidth=2;x.beginPath();for(let k=12;k<L-6;k+=16){x.moveTo(x1+ux*k+nx,y1+uy*k+ny);x.lineTo(x1+ux*k-nx,y1+uy*k-ny)}x.stroke();
+  });
+  Object.entries(SN).forEach(([a,b])=>{
+    const[x1,y1]=sq(+a),[x2,y2]=sq(b),dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L,col='hsl('+((+a*37)%360)+',60%,42%)';
+    const pt=t=>{const o=Math.sin(t*Math.PI*3)*10*(1-.3*t);return[x1+dx*t+nx*o,y1+dy*t+ny*o]};
+    x.strokeStyle=col;x.lineCap='round';
+    for(let i=0;i<24;i++){const[p1,q1]=pt(i/24),[p2,q2]=pt((i+1)/24);x.lineWidth=9-6*i/24;x.beginPath();x.moveTo(p1,q1);x.lineTo(p2,q2);x.stroke()}
+    x.fillStyle=col;x.beginPath();x.arc(x1,y1,8,0,7);x.fill();
+    x.fillStyle='#fff';x.beginPath();x.arc(x1-3,y1-2,2.2,0,7);x.arc(x1+3,y1-2,2.2,0,7);x.fill();
+    x.fillStyle='#111';x.beginPath();x.arc(x1-3,y1-2,1,0,7);x.arc(x1+3,y1-2,1,0,7);x.fill();
+  });
+}
+function loop(){
+  drawBoard();
+  if(pl){
+    x.textAlign='center';x.textBaseline='middle';
+    pl.forEach(p=>{
+      const[tx,ty]=target(p);p.dx+=(tx-p.dx)*.25;p.dy+=(ty-p.dy)*.25;
+      x.fillStyle=PC[p.ci].c;x.strokeStyle='#222';x.lineWidth=2;x.beginPath();x.arc(p.dx,p.dy,9,0,7);x.fill();x.stroke();
+      if(p===cur&&ph!=='over'){x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.arc(p.dx,p.dy,12,0,7);x.stroke()}
+    });
+  }
+  requestAnimationFrame(loop);
+}
+$('dice').onclick=()=>{if(cur&&cur.human)roll()};
+$('nw').onclick=setup;$('ob').onclick=setup;$('md').onchange=setup;$('cp').onchange=setup;
+setup();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
