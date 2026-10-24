@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pinball</title>
+<style>
+:root{--bg:#171028;--ink:#efe6ff;--muted:#a898c8;--card:#2a1d46;--line:#4a3a70;--btn:#ff9d2e;--btnink:#2b1500;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e9e1f7;--ink:#241a3d;--muted:#6d5f8c;--card:#fff;--line:#c9bde6}}
+:root[data-theme="light"]{--bg:#e9e1f7;--ink:#241a3d;--muted:#6d5f8c;--card:#fff;--line:#c9bde6}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:none}
+h1{margin:2px 0 4px;font-size:1.2rem}
+.hud{display:flex;gap:8px;margin-bottom:4px}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:2px 14px;text-align:center;font-size:.7rem;color:var(--muted)}
+.hud b{display:block;font-size:1rem;color:var(--ink);font-family:monospace}
+.wrap{position:relative}
+canvas{display:block;height:min(calc(100svh - 170px),600px);aspect-ratio:360/600;width:auto;max-width:96vw;border-radius:12px;touch-action:none}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(12,6,26,.82);color:#fff;border-radius:12px;text-align:center;padding:14px}
+.ov h2{margin:0;color:#ff9d2e;letter-spacing:2px}.ov p{margin:0;line-height:1.8;font-size:.9rem}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:10px;padding:10px 24px;cursor:pointer;font-weight:700}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.ctl{display:flex;gap:10px;margin-top:6px}
+.ctl button{height:52px;width:84px;font-size:1.05rem;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.ctl .l{width:120px}
+.ctl button:active{filter:brightness(1.5)}
+.hint{color:var(--muted);font-size:.74rem;margin-top:4px;text-align:center}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🎱 Pinball</h1>
+<div class="hud"><div>SCORE<b id="sc">0</b></div><div>BALLS<b id="bl">3</b></div><div>BEST<b id="bs">0</b></div></div>
+<div class="wrap"><canvas id="c" width="360" height="600"></canvas>
+<div class="ov" id="ov"><h2 id="ot">PINBALL</h2><p id="om">نیمه‌ی چپ و راست صفحه را لمس کن تا فلیپرها بزنند.<br>دکمه‌ی LAUNCH را نگه دار و رها کن تا توپ پرتاب شود.</p><button id="go">START</button></div></div>
+<div class="ctl"><button class="l" id="bL">◀ LEFT</button><button id="bP">LAUNCH</button><button class="l" id="bR">RIGHT ▶</button></div>
+<div class="hint">کلیدها: ← / Z چپ · → / M راست · فاصله: پرتاب (نگه دار و رها کن)</div>
+<script>
+const W=360,H=600,R=7,G=820,$=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d');
+let laneT=0,ball,balls=3,score=0,best=0,st='idle',charge=0,charging=false,last=0,au,fx=[],still=0,msg='',msgT=0;
+try{best=+localStorage.getItem('pinball-best')||0}catch(e){}
+function beep(f,d=.05,ty='square'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.025*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const walls=[];
+(function(){
+  const cx=180,cy=170,rr=170,n=16;let px=cx-rr,py=cy;
+  for(let i=1;i<=n;i++){const a=Math.PI-i*Math.PI/n,nx=cx+rr*Math.cos(a),ny=cy-rr*Math.sin(a);walls.push([px,py,nx,ny,.5]);px=nx;py=ny}
+  walls.push([10,170,10,480,.5],[350,170,350,588,.5],[322,215,322,588,.4],[322,588,350,588,.2]);
+  walls.push([10,480,100,540,.45],[322,480,260,540,.45]);
+})();
+const slings=[[46,405,84,468],[276,405,238,468]];
+const bumpers=[{x:130,y:215,r:19,f:0},{x:230,y:215,r:19,f:0},{x:180,y:290,r:19,f:0}];
+const targets=[{x:112,y:122,lit:0},{x:180,y:98,lit:0},{x:248,y:122,lit:0}];
+const fl=[{px:112,py:548,d:1,a:.5,av:0,L:66},{px:248,py:548,d:-1,a:.5,av:0,L:66}];
+const press={l:false,r:false};
+function newBall(){ball={x:336,y:572,vx:0,vy:0};st='ready';charge=0;charging=false;still=0}
+function start(){score=0;balls=3;targets.forEach(t=>t.lit=0);fx=[];newBall();$('ov').style.display='none';hud()}
+function hud(){$('sc').textContent=score;$('bl').textContent=balls;$('bs').textContent=Math.max(best,score)}
+function add(p,label){score+=p;if(label){msg=label;msgT=1}hud()}
+function launch(){if(st!=='ready')return;ball.vy=-(700+charge*560);ball.vx=0;st='play';beep(200,.2,'sawtooth');charge=0;charging=false}
+function hitSeg(x1,y1,x2,y2,th,e,vel){
+  const dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy;let t=((ball.x-x1)*dx+(ball.y-y1)*dy)/l2;t=Math.max(0,Math.min(1,t));
+  const cx=x1+dx*t,cy=y1+dy*t,ex=ball.x-cx,ey=ball.y-cy,d=Math.hypot(ex,ey),mn=R+th;
+  if(d<mn&&d>1e-6){
+    const nx=ex/d,ny=ey/d;ball.x=cx+nx*mn;ball.y=cy+ny*mn;
+    const[sx,sy]=vel?vel(cx,cy):[0,0],rvn=(ball.vx-sx)*nx+(ball.vy-sy)*ny;
+    if(rvn<0){ball.vx-=(1+e)*rvn*nx;ball.vy-=(1+e)*rvn*ny;return -rvn}
+  }
+  return 0;
+}
+function flipTip(f){return[f.px+f.d*f.L*Math.cos(f.a),f.py+f.L*Math.sin(f.a)]}
+function update(dt){
+  if(charging&&st==='ready')charge=Math.min(1,charge+dt*1.1);
+  fl.forEach((f,i)=>{
+    const tgt=(i?press.r:press.l)?-.55:.5,old=f.a,step=17*dt;
+    f.a+=Math.max(-step,Math.min(step,tgt-f.a));f.av=(f.a-old)/dt;
+  });
+  if(st==='ready'){ball.x=336;ball.y=Math.min(572,572+charge*10);return}
+  if(st!=='play')return;
+  const sub=6,sd=dt/sub;
+  for(let s=0;s<sub;s++){
+    ball.vy+=G*sd;ball.x+=ball.vx*sd;ball.y+=ball.vy*sd;
+    walls.forEach(w=>hitSeg(w[0],w[1],w[2],w[3],2,w[4]));
+    slings.forEach(w=>{const k=hitSeg(w[0],w[1],w[2],w[3],3,1.15);if(k>60){add(10);beep(500,.03)}});
+    bumpers.forEach(b=>{
+      const dx=ball.x-b.x,dy=ball.y-b.y,d=Math.hypot(dx,dy),mn=R+b.r;
+      if(d<mn&&d>1e-6){const nx=dx/d,ny=dy/d;ball.x=b.x+nx*mn;ball.y=b.y+ny*mn;const vn=ball.vx*nx+ball.vy*ny;if(vn<0){ball.vx-=2*vn*nx;ball.vy-=2*vn*ny}ball.vx+=nx*200;ball.vy+=ny*200;b.f=.15;add(100,'');beep(700+Math.random()*200,.06,'triangle')}
+    });
+    targets.forEach(t=>{if(!t.lit&&Math.hypot(ball.x-t.x,ball.y-t.y)<R+8){t.lit=1;add(500,'TARGET +500');beep(900,.08,'triangle');ball.vy=Math.abs(ball.vy)*.6+80;
+      if(targets.every(q=>q.lit)){add(2000,'BONUS +2000');targets.forEach(q=>q.lit=0);beep(1200,.3,'triangle')}}});
+    fl.forEach(f=>{
+      const[tx,ty]=flipTip(f);
+      hitSeg(f.px,f.py,tx,ty,7,.45,(cx,cy)=>{const sdist=Math.hypot(cx-f.px,cy-f.py);return[f.av*sdist*(-f.d*Math.sin(f.a)),f.av*sdist*Math.cos(f.a)]});
+    });
+    const sp=Math.hypot(ball.vx,ball.vy);if(sp>1150){ball.vx*=1150/sp;ball.vy*=1150/sp}
+  }
+  const sp=Math.hypot(ball.vx,ball.vy);if(ball.x>322&&ball.y>500&&sp<25){laneT+=dt;if(laneT>.5){laneT=0;newBall();return}}else laneT=0;still=sp<14&&ball.y<540&&ball.x<318?still+dt:0;
+  if(still>2){ball.vx=(Math.random()-.5)*300;ball.vy=-200;still=0}
+  if(ball.y>H+14){
+    balls--;hud();beep(150,.4,'sawtooth');
+    if(balls<=0){st='over';if(score>best){best=score;try{localStorage.setItem('pinball-best',best)}catch(e){}}$('ot').textContent='GAME OVER';$('om').innerHTML='SCORE: '+score+'<br>BEST: '+best;$('go').textContent='AGAIN';$('ov').style.display='flex'}
+    else newBall();
+  }
+}
+function draw(t){
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#1b0f3a');g.addColorStop(1,'#0b0618');x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.strokeStyle='#8a6bff';x.lineWidth=3;x.lineCap='round';
+  walls.forEach(w=>{x.beginPath();x.moveTo(w[0],w[1]);x.lineTo(w[2],w[3]);x.stroke()});
+  x.strokeStyle='#ff6fb0';x.lineWidth=4;slings.forEach(w=>{x.beginPath();x.moveTo(w[0],w[1]);x.lineTo(w[2],w[3]);x.stroke()});
+  targets.forEach(q=>{x.fillStyle=q.lit?'#ffe14d':'#4a3a70';x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.arc(q.x,q.y,8,0,7);x.fill();x.stroke()});
+  bumpers.forEach(b=>{b.f=Math.max(0,b.f-.016);x.shadowColor='#2fd5c3';x.shadowBlur=b.f>0?24:8;x.fillStyle=b.f>0?'#ffffff':'#2fd5c3';x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fill();x.shadowBlur=0;x.fillStyle='#0b3d38';x.beginPath();x.arc(b.x,b.y,b.r*.55,0,7);x.fill()});
+  fl.forEach(f=>{const[tx,ty]=flipTip(f);x.strokeStyle='#ff9d2e';x.lineWidth=14;x.beginPath();x.moveTo(f.px,f.py);x.lineTo(tx,ty);x.stroke();x.fillStyle='#fff';x.beginPath();x.arc(f.px,f.py,6,0,7);x.fill()});
+  if(st==='ready'){x.fillStyle='#ff6fb0';x.fillRect(328,578+charge*10,16,6);x.fillStyle='#fff6';x.fillRect(326,520,4,60);x.fillStyle='#ffd23f';x.fillRect(332,590,6,6);x.fillStyle='#ffe14d88';x.fillRect(340,300+(1-charge)*200,5,charge*200)}
+  if(ball){x.fillStyle='#e8ecf3';x.shadowColor='#7fe0ff';x.shadowBlur=10;x.beginPath();x.arc(ball.x,ball.y,R,0,7);x.fill();x.shadowBlur=0;x.fillStyle='#fff';x.beginPath();x.arc(ball.x-2,ball.y-2,2.2,0,7);x.fill()}
+  if(msgT>0){x.globalAlpha=Math.min(1,msgT);x.fillStyle='#ffe14d';x.font='bold 22px monospace';x.textAlign='center';x.fillText(msg,W/2,360);x.globalAlpha=1}
+}
+function loop(t){
+  const dt=Math.min(.033,(t-last)/1000||0);last=t;msgT=Math.max(0,msgT-dt);
+  update(dt);draw(t);requestAnimationFrame(loop);
+}
+const half=e=>{const r=cv.getBoundingClientRect();return(e.clientX-r.left)/r.width<.5?'l':'r'};
+const down={};
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(st==='idle'||st==='over')return;const h=half(e);down[e.pointerId]=h;press[h]=true;beep(260,.02)});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>cv.addEventListener(ev,e=>{const h=down[e.pointerId];if(h){delete down[e.pointerId];if(!Object.values(down).includes(h))press[h]=false}}));
+const hold=(id,on,off)=>{const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();on()});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,off))};
+hold('bL',()=>press.l=true,()=>press.l=false);hold('bR',()=>press.r=true,()=>press.r=false);hold('bP',()=>{charging=true},()=>{if(charging)launch()});
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='z')press.l=true;else if(e.key==='ArrowRight'||e.key==='m')press.r=true;else if(e.key===' '){e.preventDefault();if(st==='ready')charging=true;else if(st!=='play')$('go').click()}});
+addEventListener('keyup',e=>{if(e.key==='ArrowLeft'||e.key==='z')press.l=false;else if(e.key==='ArrowRight'||e.key==='m')press.r=false;else if(e.key===' '&&charging)launch()});
+$('go').onclick=start;hud();newBall();st='idle';
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='play'){st='pause';$('ot').textContent='PAUSED';$('om').textContent='';$('go').textContent='RESUME';$('ov').style.display='flex';$('go').onclick=()=>{st='play';$('ov').style.display='none';$('go').onclick=start}}});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
