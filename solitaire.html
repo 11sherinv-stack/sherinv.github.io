@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solitaire</title>
+<style>
+:root{--bg:#eef3e0;--ink:#26301a;--muted:#667a4d;--card:#fff;--line:rgba(60,80,30,.25);--btn:#14a89b;--btnink:#fff;--felt:#2f7d52;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d;--felt:#1c4a33}}
+:root[data-theme="dark"]{--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d;--felt:#1c4a33}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:3px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:6px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.hud{display:flex;gap:8px;margin:4px 0}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:2px 14px;text-align:center;font-size:.7rem;color:var(--muted)}
+.hud b{display:block;font-size:1rem;color:var(--ink)}
+.wrap{position:relative;width:min(98vw,560px);background:var(--felt);border-radius:14px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#bd{position:relative;width:100%;direction:ltr}
+.cd{position:absolute;border-radius:6px;background:#fff;border:1px solid #888;overflow:hidden;font-family:Arial,sans-serif;font-weight:700;cursor:pointer;color:#111}
+.cd.red{color:#d32f2f}
+.cd .tl{position:absolute;top:2px;left:4px;font-size:calc(var(--cw) * .27);line-height:1}
+.cd .ct{position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--cw) * .55);opacity:.9;padding-top:14%}
+.cd.dn{background:repeating-linear-gradient(45deg,#1e5aa8 0 6px,#2a74cf 6px 12px);border:2px solid #fff}
+.cd.sel{outline:3px solid #ffd23f;outline-offset:-1px;z-index:50}
+.ph{position:absolute;border-radius:6px;border:2px dashed rgba(255,255,255,.4);display:grid;place-items:center;color:rgba(255,255,255,.5);font-size:calc(var(--cw) * .5);cursor:pointer}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,18,8,.86);color:#fff;border-radius:14px;text-align:center;padding:14px;z-index:99}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center;max-width:560px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>♠️ Solitaire</h1>
+<div class="row">
+  <select id="dr" aria-label="کشیدن"><option value="1">کشیدن ۱ کارت</option><option value="3">کشیدن ۳ کارت</option></select>
+  <button class="b" id="un">↶ برگشت</button>
+  <button class="b pr" id="nw">بازی جدید</button>
+</div>
+<div class="hud"><div>زمان<b id="tm">۰:۰۰</b></div><div>حرکت<b id="mv">۰</b></div></div>
+<div class="wrap"><div id="bd"></div><div class="ov" id="ov"><h2>🎉 بردی!</h2><p id="om"></p><button class="b pr" id="ob">بازی جدید</button></div></div>
+<div class="hint">روی کارت بزن تا انتخاب شود، بعد روی مقصد بزن. دوبار زدن روی کارت، آن را به پایه (آس‌ها) می‌فرستد. روی دسته‌ی کارت بزن تا کارت جدید بیاید.</div>
+<script>
+const $=i=>document.getElementById(i),bd=$('bd'),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const SU=['♠','♥','♦','♣'],RK=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'],red=s=>s===1||s===2;
+let tab,fnd,stock,waste,sel,hist,moves,t0,tmr,over,au;
+function beep(f,d=.05){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.04*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function newGame(){
+  const d=[];for(let s=0;s<4;s++)for(let r=1;r<=13;r++)d.push({s,r,up:false});
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
+  tab=[];for(let i=0;i<7;i++){const col=[];for(let j=0;j<=i;j++){const c=d.pop();c.up=j===i;col.push(c)}tab.push(col)}
+  stock=d;waste=[];fnd=[[],[],[],[]];sel=null;hist=[];moves=0;t0=0;over=false;clearInterval(tmr);$('ov').style.display='none';$('tm').textContent=fa('0:00');
+  render();
+}
+const snap=()=>{hist.push(JSON.stringify({tab,fnd,stock,waste,moves}));if(hist.length>300)hist.shift()};
+function undo(){if(!hist.length||over)return;const s=JSON.parse(hist.pop());({tab,fnd,stock,waste,moves}=s);sel=null;render()}
+function tick(){const s=Math.floor((Date.now()-t0)/1000);$('tm').textContent=fa(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'))}
+function begin(){if(!t0){t0=Date.now();tmr=setInterval(tick,1000)}}
+function render(){
+  const W=bd.clientWidth||330,gap=W*.014,cw=(W-6*gap)/7,ch=cw*1.4,y0=ch+gap*3,X=i=>i*(cw+gap);
+  bd.style.setProperty('--cw',cw+'px');
+  let h='',maxY=y0+ch;
+  const card=(c,p,k,x,y,extra)=>'<div class="cd '+(c.up?(red(c.s)?'red':''):'dn')+(extra||'')+'" data-p="'+p+'" data-k="'+k+'" style="left:'+x+'px;top:'+y+'px;width:'+cw+'px;height:'+ch+'px">'+(c.up?'<span class="tl">'+RK[c.r]+SU[c.s]+'</span><span class="ct">'+SU[c.s]+'</span>':'')+'</div>';
+  const ph=(p,x,y,t)=>'<div class="ph" data-p="'+p+'" style="left:'+x+'px;top:'+y+'px;width:'+cw+'px;height:'+ch+'px">'+(t||'')+'</div>';
+  h+=stock.length?card({up:false},'s',0,X(0),0):ph('s',X(0),0,'↻');
+  waste.length?waste.slice(-3).forEach((c,i,a)=>{const top=i===a.length-1;h+=card(c,top?'w':'x',0,X(1)+i*cw*.18,0,top&&sel&&sel.from==='w'?' sel':'')}):0;
+  for(let i=0;i<4;i++){const f=fnd[i];h+=f.length?card(f[f.length-1],'f'+i,0,X(3+i),0):ph('f'+i,X(3+i),0,'A')}
+  tab.forEach((col,i)=>{
+    if(!col.length){h+=ph('t'+i,X(i),y0);return}
+    let y=y0;col.forEach((c,j)=>{h+=card(c,'t'+i,j,X(i),y,sel&&sel.from==='t'+i&&j>=sel.k?' sel':'');y+=c.up?ch*.3:ch*.13});maxY=Math.max(maxY,y+ch*.7);
+  });
+  bd.innerHTML=h;bd.style.height=maxY+'px';$('mv').textContent=fa(moves);
+}
+function run(from,k){const col=tab[+from[1]];for(let j=k;j<col.length-1;j++){const a=col[j],b=col[j+1];if(!a.up||!b.up||red(a.s)===red(b.s)||a.r!==b.r+1)return false}return col[k].up}
+const cardsOf=s=>s.from==='w'?[waste[waste.length-1]]:s.from[0]==='f'?[fnd[+s.from[1]][fnd[+s.from[1]].length-1]]:tab[+s.from[1]].slice(s.k);
+function canPlace(cs,to){
+  const c=cs[0];
+  if(to[0]==='f'){if(cs.length!==1)return false;const f=fnd[+to[1]];return f.length?f[f.length-1].s===c.s&&f[f.length-1].r+1===c.r:c.r===1}
+  const col=tab[+to[1]];if(!col.length)return c.r===13;const t=col[col.length-1];return t.up&&t.r===c.r+1&&red(t.s)!==red(c.s);
+}
+function doMove(to){
+  const cs=cardsOf(sel);snap();begin();
+  if(sel.from==='w')waste.pop();else if(sel.from[0]==='f')fnd[+sel.from[1]].pop();else{const col=tab[+sel.from[1]];col.splice(sel.k);if(col.length)col[col.length-1].up=true}
+  if(to[0]==='f')fnd[+to[1]].push(cs[0]);else tab[+to[1]].push(...cs);
+  moves++;sel=null;beep(520);render();
+  if(fnd.every(f=>f.length===13))win();
+}
+function win(){over=true;clearInterval(tmr);beep(900,.3);$('om').textContent='زمان: '+$('tm').textContent+' · حرکت: '+fa(moves);$('ov').style.display='flex'}
+function selectable(p,k){
+  if(p==='w')return waste.length>0;
+  if(p[0]==='f')return fnd[+p[1]].length>0;
+  if(p[0]==='t'){const col=tab[+p[1]];return col.length>0&&k<col.length&&run(p,k)}
+  return false;
+}
+function auto(){
+  const cs=cardsOf(sel);if(cs.length!==1)return false;
+  for(let i=0;i<4;i++)if(canPlace(cs,'f'+i)){doMove('f'+i);return true}return false;
+}
+function tap(p,k){
+  if(p==='s'){
+    snap();begin();
+    if(stock.length){for(let i=0;i<+$('dr').value&&stock.length;i++){const c=stock.pop();c.up=true;waste.push(c)}}
+    else if(waste.length){stock=waste.reverse().map(c=>({...c,up:false}));waste=[]}
+    else hist.pop();
+    sel=null;moves++;beep(300);render();return;
+  }
+  if(p==='x')return;
+  if(sel){
+    const same=(sel.from===p&&(p==='w'||p[0]==='f'||sel.k===k));
+    if(same){if(!auto()){sel=null;render()}return}
+    if((p[0]==='t'||p[0]==='f')&&canPlace(cardsOf(sel),p)){doMove(p);return}
+    sel=null;
+  }
+  if(selectable(p,k)){sel={from:p,k};beep(380,.03)}
+  render();
+}
+bd.addEventListener('click',e=>{const el=e.target.closest('[data-p]');if(!el||over)return;tap(el.dataset.p,+el.dataset.k)});
+$('un').onclick=undo;$('nw').onclick=newGame;$('ob').onclick=newGame;
+addEventListener('resize',render);
+newGame();
+</script>
+</body>
+</html>

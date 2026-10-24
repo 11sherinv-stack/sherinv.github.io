@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sea Battle</title>
+<style>
+:root{--bg:#e6f0f7;--ink:#13263a;--muted:#5a7188;--card:#fff;--line:rgba(30,70,110,.25);--btn:#14a89b;--btnink:#fff;--sea:#2b7bb9;--sea2:#2a70aa;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1522;--ink:#e6f0fa;--muted:#8fa6bd;--card:#16273a;--line:rgba(140,190,240,.25);--btn:#2fd5c3;--btnink:#08201d;--sea:#154a78;--sea2:#134270}}
+:root[data-theme="dark"]{--bg:#0b1522;--ink:#e6f0fa;--muted:#8fa6bd;--card:#16273a;--line:rgba(140,190,240,.25);--btn:#2fd5c3;--btnink:#08201d;--sea:#154a78;--sea2:#134270}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+button:disabled{opacity:.45}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#stt{min-height:1.8em;font-weight:700;margin:6px 0;text-align:center}
+.lab{font-size:.8rem;color:var(--muted);margin:6px 0 3px}
+.bd{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;direction:ltr;background:var(--line);padding:2px;border-radius:8px}
+.bd.big{width:min(92vw,380px)}.bd.sm{width:min(58vw,230px)}
+.c{aspect-ratio:1;display:grid;place-items:center;background:var(--sea);border:0;padding:0;font-size:clamp(.6rem,3.4vw,1.1rem);line-height:1;color:#fff;border-radius:3px;cursor:pointer}
+.c:nth-child(odd){background:var(--sea2)}
+.bd.sm .c{font-size:clamp(.5rem,2.3vw,.8rem);cursor:default}
+.c.sh{background:#8a98a6!important}
+.c.m{color:#d6ecff}
+.c.h{background:#e8742a!important}
+.c.sk{background:#8d1f1f!important}
+.c:disabled{cursor:default}
+.ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(6,16,28,.82);color:#fff;text-align:center;padding:14px;z-index:9}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.76rem;margin-top:10px;text-align:center;max-width:380px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🚢 Sea Battle</h1>
+<div class="row">
+  <select id="lv" aria-label="سطح"><option value="easy">آسان</option><option value="hard" selected>سخت</option></select>
+  <button class="b" id="sf">🔀 چیدن دوباره‌ی کشتی‌ها</button>
+  <button class="b pr" id="st">شروع نبرد</button>
+</div>
+<div id="stt"></div>
+<div class="lab">دریای دشمن — برای شلیک روی خانه بزن</div>
+<div class="bd big" id="eb"></div>
+<div class="lab">ناوگان تو</div>
+<div class="bd sm" id="pb"></div>
+<div class="ov" id="ov"><h2 id="ot"></h2><button class="b pr" id="ob">بازی جدید</button></div>
+<div class="hint">اگر کشتی دشمن را بزنی دوباره شلیک می‌کنی. کشتی‌ها: ۵، ۴، ۳، ۳ و ۲ خانه‌ای. قبل از شروع می‌توانی چیدمان را عوض کنی.</div>
+<script>
+const $=i=>document.getElementById(i),LENS=[5,4,3,3,2],rnd=a=>a[Math.floor(Math.random()*a.length)];
+let P,E,ps,es,phase='setup',pturn=true,level='hard',au;
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function place(){
+  const g=Array(100).fill(-1),ships=[];
+  LENS.forEach((len,si)=>{
+    for(;;){
+      const h=Math.random()<.5,r=Math.floor(Math.random()*(h?10:11-len)),c=Math.floor(Math.random()*(h?11-len:10)),cells=[];
+      for(let k=0;k<len;k++)cells.push(h?r*10+c+k:(r+k)*10+c);
+      if(cells.every(i=>g[i]<0)){cells.forEach(i=>g[i]=si);ships.push({len,cells,hits:0});break}
+    }
+  });
+  return{g,ships};
+}
+function newGame(){
+  P=place();E=place();ps=Array(100).fill(0);es=Array(100).fill(0);phase='setup';pturn=true;level=$('lv').value;
+  $('ov').style.display='none';$('st').disabled=false;$('sf').disabled=false;
+  $('stt').textContent='کشتی‌هایت را ببین و «شروع نبرد» را بزن';render();
+}
+function sunk(s){return s.hits>=s.len}
+function render(){
+  $('eb').innerHTML=Array.from({length:100},(_,i)=>{
+    let cl='c',t='';
+    if(ps[i]===1){cl+=' m';t='•'}
+    else if(ps[i]===2){const s=E.ships[E.g[i]];if(sunk(s)){cl+=' sk';t='✖'}else{cl+=' h';t='💥'}}
+    return '<button class="'+cl+'" data-i="'+i+'"'+(ps[i]||phase!=='play'?' disabled':'')+' aria-label="خانه '+(i+1)+'">'+t+'</button>';
+  }).join('');
+  $('pb').innerHTML=Array.from({length:100},(_,i)=>{
+    let cl='c',t='';
+    if(P.g[i]>=0)cl+=' sh';
+    if(es[i]===1){cl+=' m';t='•'}else if(es[i]===2){cl+=' h';t='💥'}
+    return '<div class="'+cl+'">'+t+'</div>';
+  }).join('');
+}
+function fire(i){
+  if(phase!=='play'||!pturn||ps[i])return;
+  if(E.g[i]>=0){
+    ps[i]=2;const s=E.ships[E.g[i]];s.hits++;beep(200,.15);
+    if(sunk(s))$('stt').textContent='💥 یک کشتی دشمن غرق شد!';else $('stt').textContent='🎯 زدی! دوباره شلیک کن';
+    if(E.ships.every(sunk))return end(true);
+    render();
+  }else{ps[i]=1;beep(500,.05);pturn=false;$('stt').textContent='آب! نوبت دشمن…';render();setTimeout(ai,800)}
+}
+function aiPick(){
+  const un=[];for(let i=0;i<100;i++)if(!es[i])un.push(i);
+  if(level==='hard'){
+    const hits=[];for(let i=0;i<100;i++)if(es[i]===2&&!sunk(P.ships[P.g[i]]))hits.push(i);
+    if(hits.length){
+      let cand=[];
+      if(hits.length>=2){
+        const rs=hits.map(i=>i/10|0),cs=hits.map(i=>i%10);
+        if(new Set(rs).size===1){const r=rs[0];[Math.min(...cs)-1,Math.max(...cs)+1].forEach(c=>{if(c>=0&&c<10)cand.push(r*10+c)})}
+        else if(new Set(cs).size===1){const c=cs[0];[Math.min(...rs)-1,Math.max(...rs)+1].forEach(r=>{if(r>=0&&r<10)cand.push(r*10+c)})}
+      }
+      cand=cand.filter(i=>!es[i]);
+      if(!cand.length)hits.forEach(i=>{const r=i/10|0,c=i%10;[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([a,b])=>{if(a>=0&&a<10&&b>=0&&b<10&&!es[a*10+b])cand.push(a*10+b)})});
+      if(cand.length)return rnd(cand);
+    }
+    const par=un.filter(i=>((i/10|0)+i%10)%2===0);return rnd(par.length?par:un);
+  }
+  return rnd(un);
+}
+function ai(){
+  if(phase!=='play')return;
+  const i=aiPick();
+  if(P.g[i]>=0){
+    es[i]=2;const s=P.ships[P.g[i]];s.hits++;beep(160,.2);
+    $('stt').textContent=sunk(s)?'☠️ یکی از کشتی‌هایت غرق شد':'⚠️ دشمن کشتی‌ات را زد!';
+    render();
+    if(P.ships.every(sunk))return end(false);
+    setTimeout(ai,850);
+  }else{es[i]=1;pturn=true;$('stt').textContent='دشمن خطا زد — نوبت توست';render()}
+}
+function end(win){
+  phase='over';render();beep(win?900:150,.4);
+  $('ot').textContent=win?'🏆 همه‌ی کشتی‌های دشمن را غرق کردی!':'💀 ناوگانت نابود شد';
+  $('ov').style.display='flex';
+}
+$('eb').addEventListener('click',e=>{const b=e.target.closest('.c');if(b)fire(+b.dataset.i)});
+$('st').onclick=()=>{if(phase!=='setup')return;phase='play';$('st').disabled=true;$('sf').disabled=true;$('stt').textContent='نوبت توست — شلیک کن!';render()};
+$('sf').onclick=()=>{if(phase!=='setup')return;P=place();render()};
+$('lv').onchange=()=>{level=$('lv').value};
+$('ob').onclick=newGame;
+newGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>River Jet</title>
+<style>
+:root{--bg:#10162a;--ink:#e8ecf3;--muted:#99a3b5;--card:#1b2340;--line:#384052;--btn:#f4c400;--btnink:#2b2300;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#dde3f2;--ink:#1c2230;--muted:#5b6578;--card:#fff;--line:#b9c2d8}}
+:root[data-theme="light"]{--bg:#dde3f2;--ink:#1c2230;--muted:#5b6578;--card:#fff;--line:#b9c2d8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.2rem}
+.wrap{position:relative;border-radius:8px;overflow:hidden}
+canvas{display:block;height:min(calc(100svh - 190px),540px);aspect-ratio:360/540;width:auto;max-width:96vw;background:#000;touch-action:none;image-rendering:pixelated}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,12,.8);color:#fff;text-align:center;padding:14px}
+.ov h2{margin:0;font-family:monospace;letter-spacing:2px;color:#f4e800}.ov p{margin:0;line-height:1.8;font-size:.9rem}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:10px;padding:10px 24px;cursor:pointer;font-weight:700}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.ctl{display:flex;gap:12px;margin-top:8px;align-items:center}
+.ctl button{height:54px;font-size:1.05rem;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.ctl .fire{width:150px;background:#d63c3c;color:#fff;border:0;font-size:1.2rem}
+.ctl .sp{width:64px}
+.ctl button:active{filter:brightness(1.4)}
+.hint{color:var(--muted);font-size:.76rem;margin-top:6px;text-align:center;max-width:380px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🛩️ River Jet</h1>
+<div class="wrap"><canvas id="c" width="360" height="540"></canvas>
+<div class="ov" id="ov"><h2 id="ot">RIVER JET</h2><p id="om">جت زرد را در رودخانه هدایت کن.<br>کشتی‌ها، هلیکوپترها و پل‌ها را بزن؛ از روی مخزن سوخت رد شو تا سوخت بگیری.<br>مواظب ساحل و جزیره‌ها باش!</p><button id="go">START</button></div></div>
+<div class="ctl"><button class="sp" id="slow" aria-label="آهسته">⏬</button><button class="fire" id="fire">🔥 FIRE</button><button class="sp" id="fast" aria-label="سریع">⏫</button></div>
+<div class="hint">انگشتت را روی صفحه بکش تا جت حرکت کند · FIRE شلیک · ⏫⏬ سرعت · کلیدها: ← → حرکت، فاصله شلیک، ↑↓ سرعت</div>
+<script>
+const W=360,H=540,PH=480,RH=8,PY=70,$=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d');
+const JET=['....X....','...XXX...','..XXXXX..','XXXXXXXXX','..XXXXX..','...XXX...','..X.X.X..'];
+let st='idle',rows,rb,gc,gw,tc,tw,isl,ent,bul,pt,dist,me,tgt,fuel,lives,score,level,sm=1,fireCd=0,inv=0,last=0,keys={},best=0,au,nextBr,wid;
+try{best=+localStorage.getItem('riverjet-best')||0}catch(e){}
+function beep(f,d=.05,ty='square'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.03*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function initWorld(){rows=[];rb=0;gc=W/2;gw=105;tc=W/2;tw=105;isl=null;ent=[];bul=[];pt=[];dist=0;nextBr=1700;wid=0;ensure(PH+300)}
+function rowAt(wy){const n=Math.floor(wy/RH);return rows[n-rb]}
+function ensure(upTo){
+  while((rb+rows.length)*RH<upTo){
+    const n=rb+rows.length;
+    if(n%28===0){tc=W/2+(Math.random()-.5)*90;tw=75+Math.random()*50-Math.min(level,5)*3}
+    gc+=Math.max(-2.5,Math.min(2.5,tc-gc));gw+=Math.max(-2,Math.min(2,tw-gw));
+    if(!isl&&n>40&&n%7===0&&Math.random()<.07&&gw>105){isl={left:14+Math.floor(Math.random()*18),w:36+Math.random()*30}}
+    else if(!isl&&gw<=105&&Math.random()<.01){tw=118}
+    const l=gc-gw,r=gc+gw;let ia=null,ib=null;
+    if(isl){ia=gc-isl.w/2;ib=gc+isl.w/2;if(--isl.left<=0)isl=null}
+    rows.push({l,r,ia,ib});
+    const wy=n*RH+RH/2,mid=gc;
+    if(n*RH>=nextBr){ent.push({t:'br',x:mid,wy,l,r,hp:1});nextBr+=1700}
+    else if(n>30&&n%16===0&&Math.random()<.9){
+      const k=Math.random(),lo=l+22,hi=r-22;let px=lo+Math.random()*(hi-lo);
+      if(ia!=null&&px>ia-14&&px<ib+14)px=px<(ia+ib)/2?Math.max(lo,ia-24):Math.min(hi,ib+24);
+      if(k<.32)ent.push({t:'fuel',x:px,wy,hp:1});
+      else if(k<.68)ent.push({t:'ship',x:px,wy,hp:1,vx:(Math.random()<.5?-1:1)*(30+level*4)});
+      else ent.push({t:'heli',x:px,wy,hp:1,vx:(Math.random()<.5?-1:1)*(55+level*5)});
+    }
+  }
+}
+function boom(px,py,c,n=16){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=40+Math.random()*130;pt.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:.5+Math.random()*.3,c})}}
+function start(){level=1;score=0;lives=3;initWorld();respawn(true);st='play';$('ov').style.display='none'}
+function respawn(first){
+  const r=rowAt(dist+PY);fuel=100;inv=first?.5:1.8;
+  me={x:r.ia!=null?(r.l+r.ia)/2:(r.l+r.r)/2};tgt=me.x;
+  ent=ent.filter(e=>e.wy<dist+PY-20||e.wy>dist+PY+320);
+}
+function crash(){
+  if(inv>0)return;
+  boom(me.x,PH-PY,'#f4e800',24);beep(120,.4,'sawtooth');lives--;
+  if(lives<=0){over();return}
+  respawn(false);
+}
+function over(){
+  st='over';if(score>best){best=score;try{localStorage.setItem('riverjet-best',best)}catch(e){}}
+  $('ot').textContent='GAME OVER';$('om').innerHTML='SCORE: '+score+'<br>BEST: '+best;$('go').textContent='AGAIN';$('ov').style.display='flex';
+}
+const SZ={ship:[22,7],heli:[14,8],fuel:[13,30],br:[0,14]};
+function sy(wy){return PH-(wy-dist)}
+function update(dt){
+  const base=(88+level*5)*sm;dist+=base*dt;ensure(dist+PH+300);
+  const drop=Math.floor((dist-200)/RH)-rb;if(drop>40){rows.splice(0,drop);rb+=drop}
+  const dx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0);if(dx)tgt+=dx*220*dt;
+  tgt=Math.max(10,Math.min(W-10,tgt));me.x+=(tgt-me.x)*Math.min(1,dt*12);
+  inv=Math.max(0,inv-dt);fireCd-=dt;
+  fuel-=6.2*dt;if(fuel<25&&Math.floor(fuel*3)%2===0&&Math.random()<.1)beep(220,.04);
+  if(fuel<=0){fuel=0;boom(me.x,PH-PY,'#f4e800',20);crash();return}
+  const wy=dist+PY;
+  [wy,wy+10].forEach(w=>{const r=rowAt(w);if(!r)return;
+    if(me.x-8<r.l||me.x+8>r.r||(r.ia!=null&&me.x+8>r.ia&&me.x-8<r.ib))crash()});
+  if(st!=='play')return;
+  ent.forEach(e=>{
+    if(e.vx){const r=rowAt(e.wy);if(r){e.x+=e.vx*dt;const lo=r.l+14,hi=r.r-14;if(r.ia!=null){const m=(r.ia+r.ib)/2;if(e.x>r.ia-12&&e.x<r.ib+12)e.vx=e.x<m?-Math.abs(e.vx):Math.abs(e.vx)}if(e.x<lo){e.x=lo;e.vx=Math.abs(e.vx)}if(e.x>hi){e.x=hi;e.vx=-Math.abs(e.vx)}}}
+    const[w,h]=SZ[e.t];
+    if(e.t==='br'){if(Math.abs(e.wy-wy)<h)crash()}
+    else if(e.t==='fuel'){if(Math.abs(e.x-me.x)<w+8&&Math.abs(e.wy-wy)<h+8){fuel=Math.min(100,fuel+48*dt);if(Math.random()<.2)beep(900,.02)}}
+    else if(Math.abs(e.x-me.x)<w+7&&Math.abs(e.wy-wy)<h+7){e.hp=0;boom(e.x,sy(e.wy),'#ff7a1a');crash()}
+  });
+  bul.forEach(b=>{
+    b.wy+=430*dt;const r=rowAt(b.wy);
+    if(!r||b.x<r.l||b.x>r.r||(r.ia!=null&&b.x>r.ia&&b.x<r.ib))b.d=1;
+    ent.forEach(e=>{if(b.d||e.hp<=0)return;const[w,h]=SZ[e.t];
+      const hitx=e.t==='br'?(b.x>e.l&&b.x<e.r):Math.abs(e.x-b.x)<w;
+      if(hitx&&Math.abs(e.wy-b.wy)<h){
+        b.d=1;e.hp=0;boom(e.x,sy(e.wy),e.t==='fuel'?'#d63cc8':'#ff7a1a',e.t==='br'?40:18);beep(180,.12,'sawtooth');
+        score+={ship:30,heli:60,fuel:80,br:500}[e.t];
+        if(e.t==='br'){level++;beep(900,.2,'triangle')}
+      }});
+    if(b.wy>dist+PH+10)b.d=1;
+  });
+  bul=bul.filter(b=>!b.d);ent=ent.filter(e=>e.hp>0&&e.wy>dist-60);
+}
+function fire(){if(st!=='play'||fireCd>0)return;fireCd=.32;bul.push({x:me.x,wy:dist+PY+12});beep(1000,.03)}
+function spr(rows2,cx,cy,col,px=3){x.fillStyle=col;const w=rows2[0].length*px,h=rows2.length*px;rows2.forEach((r,j)=>{for(let i=0;i<r.length;i++)if(r[i]==='X')x.fillRect(Math.round(cx-w/2+i*px),Math.round(cy-h/2+j*px),px,px)})}
+function draw(t){
+  x.fillStyle='#000';x.fillRect(0,0,W,H);
+  if(!rows)return;
+  x.fillStyle='#1c2bd9';x.fillRect(0,0,W,PH);
+  const n0=Math.floor(dist/RH);
+  for(let n=n0;n<=n0+Math.ceil(PH/RH)+1;n++){
+    const r=rows[n-rb];if(!r)continue;const y=Math.round(sy(n*RH+RH));
+    x.fillStyle='#1f8b1d';x.fillRect(0,y,r.l,RH+1);x.fillRect(r.r,y,W-r.r,RH+1);
+    if(r.ia!=null)x.fillRect(r.ia,y,r.ib-r.ia,RH+1);
+  }
+  ent.forEach(e=>{
+    const y=sy(e.wy);if(y<-40||y>PH+40)return;
+    if(e.t==='br'){x.fillStyle='#8c8c8c';x.fillRect(e.l-2,y-8,e.r-e.l+4,16);x.fillStyle='#444';x.fillRect(e.l-2,y-1,e.r-e.l+4,2);x.fillStyle='#d9d9d9';for(let q=e.l;q<e.r;q+=16)x.fillRect(q,y-8,8,3)}
+    else if(e.t==='fuel'){const cs=['F','U','E','L'];cs.forEach((c,i)=>{x.fillStyle=i%2?'#fff':'#d63cc8';x.fillRect(e.x-7,y-30+i*15,14,15);x.fillStyle=i%2?'#d63cc8':'#fff';x.font='bold 11px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText(c,e.x,y-22+i*15)})}
+    else if(e.t==='ship'){x.fillStyle='#a31717';x.fillRect(e.x-22,y-3,44,6);x.fillStyle='#111';x.fillRect(e.x-8,y-9,18,6);x.fillRect(e.x-2,y-13,3,4);x.fillStyle='#2bb6a3';x.fillRect(e.x-18,y+3,32,3)}
+    else{x.fillStyle='#0b2a5c';x.fillRect(e.x-9,y-4,18,8);x.fillRect(e.x+(e.vx>0?-16:9),y-2,7,3);x.fillStyle='#ffa500';const f=Math.floor(t/60)%2;x.fillRect(e.x-(f?12:8),y-8,f?24:16,2);x.fillRect(e.x-1,y-6,2,3);x.fillStyle='#1f6f3a';x.fillRect(e.x-6,y+4,12,2)}
+  });
+  bul.forEach(b=>{x.fillStyle='#fff7a0';x.fillRect(b.x-1,sy(b.wy)-6,3,10)});
+  if(st!=='over'&&me&&(inv<=0||Math.floor(t/90)%2))spr(JET,me.x,PH-PY,'#f4e800');
+  pt.forEach(p=>{x.globalAlpha=Math.max(0,p.l*2);x.fillStyle=p.c;x.fillRect(p.x,p.y,3,3)});x.globalAlpha=1;
+  // HUD
+  x.fillStyle='#000';x.fillRect(0,PH,W,H-PH);
+  x.strokeStyle='#fff';x.lineWidth=3;x.strokeRect(100,PH+10,160,42);
+  x.fillStyle='#fff';x.font='bold 14px monospace';x.textAlign='center';x.textBaseline='middle';
+  x.fillText('E',112,PH+40);x.fillText('F',248,PH+40);x.fillText('1/2',180,PH+42);
+  x.fillStyle='#f4e800';const ax=112+(fuel/100)*126;x.fillRect(ax-2,PH+14,5,22);
+  x.fillStyle='#fff';x.font='bold 26px monospace';x.textAlign='right';x.fillText(score,W-8,PH+32);
+  x.textAlign='left';x.fillStyle='#f4e800';x.fillText('✈'.repeat(Math.max(0,lives))||'-',8,PH+32);
+  x.fillStyle='#8aa';x.font='11px monospace';x.fillText('LV '+level,8,PH+50);
+}
+function loop(t){
+  const dt=Math.min(.04,(t-last)/1000||0);last=t;
+  if(st==='play')update(dt);
+  pt&&pt.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt});if(pt)pt=pt.filter(p=>p.l>0);
+  draw(t);requestAnimationFrame(loop);
+}
+function mv(e){const r=cv.getBoundingClientRect();tgt=(e.clientX-r.left)/r.width*W}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();mv(e)});cv.addEventListener('pointermove',e=>{if(e.pressure>0||e.buttons)mv(e)});
+const hold=(id,on,off)=>{const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();on()});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,off))};
+hold('fire',()=>{fire();fireInt=setInterval(fire,150)},()=>clearInterval(fireInt));let fireInt;
+hold('slow',()=>sm=.55,()=>sm=1);hold('fast',()=>sm=1.7,()=>sm=1);
+addEventListener('keydown',e=>{keys[e.key]=1;if(e.key.startsWith('Arrow')||e.key===' ')e.preventDefault();
+  if(e.key===' ')st==='play'?fire():$('go').click();if(e.key==='ArrowUp')sm=1.7;if(e.key==='ArrowDown')sm=.55});
+addEventListener('keyup',e=>{delete keys[e.key];if(e.key==='ArrowUp'||e.key==='ArrowDown')sm=1});
+$('go').onclick=start;
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='play'){st='pause';$('ot').textContent='PAUSED';$('om').textContent='';$('go').textContent='RESUME';$('ov').style.display='flex';$('go').onclick=()=>{st='play';$('ov').style.display='none';$('go').onclick=start}}});
+initWorld();me={x:W/2};tgt=W/2;fuel=100;lives=3;score=0;level=1;
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

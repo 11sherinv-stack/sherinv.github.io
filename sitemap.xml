@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://YOUR-SITE-ADDRESS/</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/snake.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/arena.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/2048.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/tetris.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/dino.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/flappy.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/maze.html</loc></url>
-<url><loc>https://YOUR-SITE-ADDRESS/sudoku.html</loc></url>
+<url><loc>https://inv-stack.github.io/</loc></url>
+<url><loc>https://inv-stack.github.io/2048.html</loc></url>
+<url><loc>https://inv-stack.github.io/airhockey.html</loc></url>
+<url><loc>https://inv-stack.github.io/arena.html</loc></url>
+<url><loc>https://inv-stack.github.io/breakout.html</loc></url>
+<url><loc>https://inv-stack.github.io/candy.html</loc></url>
+<url><loc>https://inv-stack.github.io/chess.html</loc></url>
+<url><loc>https://inv-stack.github.io/dino.html</loc></url>
+<url><loc>https://inv-stack.github.io/flappy.html</loc></url>
+<url><loc>https://inv-stack.github.io/happybird.html</loc></url>
+<url><loc>https://inv-stack.github.io/ludo.html</loc></url>
+<url><loc>https://inv-stack.github.io/maze.html</loc></url>
+<url><loc>https://inv-stack.github.io/memory.html</loc></url>
+<url><loc>https://inv-stack.github.io/raiders.html</loc></url>
+<url><loc>https://inv-stack.github.io/riverjet.html</loc></url>
+<url><loc>https://inv-stack.github.io/seabattle.html</loc></url>
+<url><loc>https://inv-stack.github.io/skyraid.html</loc></url>
+<url><loc>https://inv-stack.github.io/snake.html</loc></url>
+<url><loc>https://inv-stack.github.io/snakeladder.html</loc></url>
+<url><loc>https://inv-stack.github.io/solitaire.html</loc></url>
+<url><loc>https://inv-stack.github.io/sudoku.html</loc></url>
+<url><loc>https://inv-stack.github.io/tetris.html</loc></url>
+<url><loc>https://inv-stack.github.io/tictactoe.html</loc></url>
+<url><loc>https://inv-stack.github.io/truthdare.html</loc></url>
+<url><loc>https://inv-stack.github.io/uno.html</loc></url>
 </urlset>

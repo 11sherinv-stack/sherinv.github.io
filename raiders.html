@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clan Raiders</title>
+<style>
+:root{--bg:#eef3e0;--ink:#26301a;--muted:#667a4d;--card:#fff;--line:rgba(60,80,30,.25);--btn:#14a89b;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d}}
+:root[data-theme="dark"]{--bg:#162011;--ink:#e9f3cc;--muted:#a9b98a;--card:#233018;--line:rgba(217,242,74,.22);--btn:#2fd5c3;--btnink:#08201d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.25rem}
+.hud{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap;justify-content:center}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 12px;font-size:.8rem}
+.hud b{font-size:1rem}
+.wrap{position:relative;width:min(96vw,480px)}
+canvas{display:block;width:100%;aspect-ratio:1;border-radius:10px;touch-action:none;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.bar{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;justify-content:center}
+button.b{font:inherit;border-radius:10px;padding:9px 16px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0;font-weight:700}
+button.on{outline:3px solid var(--btn)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#pn{width:min(96vw,480px);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:56px;font-size:.88rem}
+#pn .r{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,18,8,.86);color:#fff;border-radius:10px;text-align:center;padding:14px}
+.ov h2{margin:0}.ov p{margin:0;line-height:1.9}
+.hint{color:var(--muted);font-size:.74rem;margin-top:8px;text-align:center;max-width:480px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🏰 Clan Raiders</h1>
+<div class="hud"><div>🪙 <b id="g">۰</b></div><div>🧪 <b id="e">۰</b></div><div>🏆 <b id="tr">۰</b></div><div id="tmw" style="display:none">⏱ <b id="tm">۰</b></div></div>
+<div class="wrap"><canvas id="c"></canvas><div class="ov" id="ov"><h2 id="ot"></h2><p id="om"></p><button class="b pr" id="ob">بازگشت به دهکده</button></div></div>
+<div class="bar" id="bar"></div>
+<div id="pn"></div>
+<div class="hint">ساختمان بساز، سرباز آموزش بده و به دهکده‌ی حریف حمله کن. طلا و اکسیر را از معدن و پمپ جمع کن (روی ساختمان بزن). غول اول به دفاع‌ها حمله می‌کند.</div>
+<script>
+const N=14,T=24,OX=12,OY=12,W=360,$=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d'),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+cv.width=cv.height=W;
+const BT={th:{n:'تاون‌هال',e:'🏰',s:2,hp:700,c:'#c9a227'},gm:{n:'معدن طلا',e:'🪙',s:2,cost:150,hp:260,c:'#d9a82a'},ep:{n:'پمپ اکسیر',e:'🧪',s:2,cost:150,hp:260,c:'#a64cd6'},bk:{n:'سربازخانه',e:'⚔️',s:2,cost:300,hp:320,c:'#8a5a2b'},cn:{n:'توپ',e:'💣',s:1,cost:250,hp:220,c:'#556',rng:4.2,dps:18},at:{n:'برج کمانداری',e:'🏹',s:1,cost:400,hp:200,c:'#2f7a46',rng:5.5,dps:13}};
+const TR={b:{n:'بربر',c:'#f08a24',cost:25,hp:70,dps:14,rng:.8,sp:46,sz:1},a:{n:'کماندار',c:'#f2589a',cost:50,hp:38,dps:11,rng:3.2,sp:44,sz:1},g:{n:'غول',c:'#9b6b3a',cost:150,hp:380,dps:28,rng:.9,sp:30,sz:5,fav:1}};
+let S,mode='village',placing=null,selB=-1,bb=[],tr=[],hand,selT='b',timer=0,loot,over=false,fx=[],last=0,au,saveT=0;
+function beep(f,d=.05){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.04*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const isCol=t=>t==='gm'||t==='ep',colCap=b=>150*b.l;
+const thL=()=>S.builds.find(b=>b.t==='th').l,cap=()=>2000+1500*thL(),cnt=t=>S.builds.filter(b=>b.t===t).length;
+const maxc=t=>t==='at'?1+thL()*2:2+thL()*2,army=()=>S.troops.b+S.troops.a+S.troops.g*5,acap=()=>10+10*cnt('bk');
+const mkB=(t,x0,y0,l=1)=>{const h=BT[t].hp*(1+.35*(l-1));return{t,x:x0,y:y0,l,s:0,hp:h,mh:h}};
+function fresh(){return{gold:600,elixir:400,trophies:0,troops:{b:4,a:0,g:0},builds:[mkB('th',6,6),mkB('gm',2,3),mkB('ep',10,3),mkB('bk',3,10),mkB('cn',9,9)],ts:Date.now()}}
+function load(){
+  try{S=JSON.parse(localStorage.getItem('raiders-save'));if(!S||!S.builds)throw 0}catch(e){S=fresh()}
+  const el=Math.min(8*3600,(Date.now()-(S.ts||Date.now()))/1000);
+  S.builds.forEach(b=>{if(isCol(b.t))b.s=Math.min(colCap(b),(b.s||0)+.5*b.l*el)});
+}
+function save(){S.ts=Date.now();try{localStorage.setItem('raiders-save',JSON.stringify(S))}catch(e){}}
+function occ(list){const o=Array.from({length:N},()=>Array(N).fill(-1));list.forEach((b,i)=>{const z=BT[b.t].s;for(let a=0;a<z;a++)for(let c=0;c<z;c++)o[b.y+a][b.x+c]=i});return o}
+function hud(){$('g').textContent=fa(Math.floor(S.gold))+'/'+fa(cap());$('e').textContent=fa(Math.floor(S.elixir))+'/'+fa(cap());$('tr').textContent=fa(S.trophies);$('tmw').style.display=mode==='battle'?'':'none';$('tm').textContent=fa(Math.ceil(timer))}
+function bar(){
+  if(mode==='village')$('bar').innerHTML='<button class="b" data-a="build">🔨 ساخت</button><button class="b" data-a="army">🪖 لشکر</button><button class="b pr" data-a="attack">⚔️ حمله</button>';
+  else $('bar').innerHTML=Object.keys(TR).map(k=>'<button class="b'+(selT===k?' on':'')+'" data-a="selT" data-k="'+k+'"'+(hand[k]?'':' disabled')+'>'+TR[k].n+' ×'+fa(hand[k])+'</button>').join('')+'<button class="b" data-a="surr">🏳️ تسلیم</button>';
+}
+function panel(h){$('pn').innerHTML=h}
+function infoPanel(){
+  if(selB<0||!S.builds[selB]){panel('روی یک ساختمان بزن تا اطلاعاتش را ببینی.');return}
+  const b=S.builds[selB],d=BT[b.t],up=b.t==='th'?800*b.l:Math.round(d.cost*b.l*1.2);
+  let h='<div class="r"><b>'+d.e+' '+d.n+' — سطح '+fa(b.l)+'</b><span>HP '+fa(Math.round(b.hp))+'</span></div>';
+  if(isCol(b.t))h+='<div class="r"><span>موجودی: '+fa(Math.floor(b.s))+' '+(b.t==='gm'?'🪙':'🧪')+'</span><button class="b pr" data-a="collect"'+(b.s<1?' disabled':'')+'>جمع کن</button></div>';
+  if(b.t==='bk')h+='<div class="r"><span>ظرفیت لشکر: '+fa(acap())+'</span></div>';
+  if(b.l<3)h+='<div class="r"><span>ارتقا به سطح '+fa(b.l+1)+'</span><button class="b" data-a="upg"'+(S.gold<up?' disabled':'')+'>'+fa(up)+' 🪙</button></div>';
+  panel(h);
+}
+function buildPanel(){
+  panel(Object.keys(BT).filter(t=>t!=='th').map(t=>'<div class="r"><span>'+BT[t].e+' '+BT[t].n+' ('+fa(cnt(t))+'/'+fa(maxc(t))+')</span><button class="b" data-a="pick" data-t="'+t+'"'+(S.gold<BT[t].cost||cnt(t)>=maxc(t)?' disabled':'')+'>'+fa(BT[t].cost)+' 🪙</button></div>').join('')+'<div class="r" style="font-size:.78rem;color:var(--muted)">تاون‌هال را ارتقا بده تا ساختمان بیشتری بسازی.</div>');
+}
+function armyPanel(){
+  panel('<div class="r"><b>لشکر</b><span>'+fa(army())+' / '+fa(acap())+'</span></div>'+Object.keys(TR).map(k=>'<div class="r"><span>'+TR[k].n+' ×'+fa(S.troops[k])+' (فضا '+fa(TR[k].sz)+')</span><button class="b" data-a="train" data-k="'+k+'"'+(S.elixir<TR[k].cost||army()+TR[k].sz>acap()?' disabled':'')+'>'+fa(TR[k].cost)+' 🧪</button></div>').join('')+'<div class="r" style="font-size:.78rem;color:var(--muted)">برای ظرفیت بیشتر، سربازخانه بساز.</div>');
+}
+function genEnemy(){
+  const tl=Math.min(3,1+Math.floor(S.trophies/120)),B=[mkB('th',6,6,tl)],o=occ(B);
+  const put=(t,l)=>{const z=BT[t].s;for(let k=0;k<80;k++){const px=1+Math.floor(Math.random()*(N-2-z+1)),py=1+Math.floor(Math.random()*(N-2-z+1));let ok=true;for(let a=0;a<z&&ok;a++)for(let c=0;c<z;c++)if(o[py+a][px+c]>=0){ok=false;break}if(!ok)continue;B.push(mkB(t,px,py,l));for(let a=0;a<z;a++)for(let c=0;c<z;c++)o[py+a][px+c]=B.length-1;return}};
+  for(let i=0;i<1+tl;i++){put('gm',tl);put('ep',tl)}
+  put('bk',tl);
+  for(let i=0;i<((1+tl*1.5)|0);i++)put('cn',Math.max(1,tl-(Math.random()<.4?1:0)));
+  for(let i=0;i<tl;i++)put('at',Math.max(1,tl-(Math.random()<.4?1:0)));
+  loot={g:Math.floor(200+tl*300+Math.random()*500),e:Math.floor(200+tl*300+Math.random()*500)};
+  return B;
+}
+function startBattle(){
+  if(army()===0){panel('اول سرباز آموزش بده! 🪖');return}
+  bb=genEnemy();tr=[];fx=[];hand={...S.troops};selT=hand.b?'b':hand.a?'a':'g';timer=90;over=false;mode='battle';placing=null;selB=-1;
+  $('ov').style.display='none';bar();panel('روی زمینِ خالی بزن تا سرباز پیاده شود. نزدیک ساختمان‌ها نمی‌شود.');hud();
+}
+const ctr=b=>({x:OX+(b.x+BT[b.t].s/2)*T,y:OY+(b.y+BT[b.t].s/2)*T});
+function target(u){
+  const al=bb.filter(b=>!b.dead);if(!al.length)return null;
+  let L=al;if(TR[u.k].fav){const d=al.filter(b=>b.t==='cn'||b.t==='at');if(d.length)L=d}
+  let best=null,bd=1e9;L.forEach(b=>{const c=ctr(b),d=Math.hypot(c.x-u.x,c.y-u.y);if(d<bd){bd=d;best=b}});return best;
+}
+function battle(dt){
+  timer-=dt;
+  tr.forEach(u=>{
+    if(!u.tg||u.tg.dead)u.tg=target(u);if(!u.tg)return;
+    const c=ctr(u.tg),dx=c.x-u.x,dy=c.y-u.y,d=Math.hypot(dx,dy)||1,reach=TR[u.k].rng*T+BT[u.tg.t].s*T/2;
+    if(d>reach){u.x+=dx/d*TR[u.k].sp*dt;u.y+=dy/d*TR[u.k].sp*dt}
+    else{u.tg.hp-=TR[u.k].dps*dt;if(TR[u.k].rng>1&&Math.random()<.3)fx.push({a:u.x,b:u.y,c:c.x,d:c.y,l:.1,col:'#ffe08a'})}
+  });
+  bb.forEach(b=>{
+    if(b.dead||!(b.t==='cn'||b.t==='at'))return;
+    const c=ctr(b),r=BT[b.t].rng*T;let best=null,bd=1e9;
+    tr.forEach(u=>{const d=Math.hypot(u.x-c.x,u.y-c.y);if(d<r&&d<bd){bd=d;best=u}});
+    if(best){best.hp-=BT[b.t].dps*(1+.4*(b.l-1))*dt;if(Math.random()<.25)fx.push({a:c.x,b:c.y,c:best.x,d:best.y,l:.08,col:b.t==='cn'?'#333':'#fff'})}
+  });
+  tr=tr.filter(u=>{if(u.hp>0)return true;for(let i=0;i<4;i++)fx.push({p:1,a:u.x,b:u.y,vx:(Math.random()-.5)*80,vy:(Math.random()-.5)*80,l:.4,col:TR[u.k].c});return false});
+  bb.forEach(b=>{if(!b.dead&&b.hp<=0){b.dead=true;beep(150,.15);const c=ctr(b);for(let i=0;i<8;i++)fx.push({p:1,a:c.x,b:c.y,vx:(Math.random()-.5)*120,vy:(Math.random()-.5)*120,l:.5,col:'#c97a2a'})}});
+  fx.forEach(f=>{f.l-=dt;if(f.p){f.a+=f.vx*dt;f.b+=f.vy*dt}});fx=fx.filter(f=>f.l>0);
+  const left=hand.b+hand.a+hand.g;
+  if(!over&&(timer<=0||bb.every(b=>b.dead)||(!tr.length&&!left)))finish();
+}
+const pct=()=>bb.filter(b=>b.dead).length/bb.length,thDown=()=>bb.find(b=>b.t==='th').dead;
+function stars(){const p=pct();return(p>=.5?1:0)+(thDown()?1:0)+(p>=.999?1:0)}
+function finish(){
+  over=true;const p=pct(),st=stars(),g=Math.floor(loot.g*p),e=Math.floor(loot.e*p),dt=[-12,8,18,28][st];
+  S.gold=Math.min(cap(),S.gold+g);S.elixir=Math.min(cap(),S.elixir+e);S.trophies=Math.max(0,S.trophies+dt);S.troops={...hand};save();
+  $('ot').textContent=['شکست 😞','★☆☆ ','★★☆ ','★★★ 🏆'][st]+(st?'':'');
+  $('om').innerHTML='تخریب: '+fa(Math.round(p*100))+'٪<br>غنیمت: '+fa(g)+' 🪙 و '+fa(e)+' 🧪<br>جام: '+(dt>=0?'+':'')+fa(dt);
+  $('ov').style.display='flex';beep(st?900:150,.35);
+}
+function backHome(){mode='village';over=false;tr=[];bb=[];$('ov').style.display='none';bar();panel('به دهکده برگشتی.');hud()}
+function drawB(b,i){
+  const d=BT[b.t],z=d.s,px=OX+b.x*T+1,py=OY+b.y*T+1,w=z*T-2;
+  x.fillStyle=d.c;x.beginPath();x.roundRect(px,py,w,w,5);x.fill();
+  x.strokeStyle=i===selB&&mode==='village'?'#fff':'rgba(0,0,0,.45)';x.lineWidth=i===selB&&mode==='village'?3:1.5;x.stroke();
+  x.font=Math.round(z*T*.6)+'px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(d.e,px+w/2,py+w/2+1);
+  x.fillStyle='#ffd23f';for(let k=0;k<b.l;k++)x.fillRect(px+3+k*5,py+w-5,4,3);
+  if(mode==='battle'&&b.hp<b.mh){x.fillStyle='#0008';x.fillRect(px,py-5,w,4);x.fillStyle='#4cd964';x.fillRect(px,py-5,w*Math.max(0,b.hp/b.mh),4)}
+  if(mode==='village'&&isCol(b.t)&&b.s>=25){x.font='14px sans-serif';x.fillText(b.t==='gm'?'🪙':'🧪',px+w/2,py-6-Math.abs(Math.sin(Date.now()/250))*3)}
+}
+function draw(){
+  x.fillStyle='#6fae4a';x.fillRect(0,0,W,W);
+  x.fillStyle='rgba(0,0,0,.05)';for(let i=0;i<N;i++)for(let j=0;j<N;j++)if((i+j)%2)x.fillRect(OX+i*T,OY+j*T,T,T);
+  x.strokeStyle='rgba(0,0,0,.2)';x.lineWidth=2;x.strokeRect(OX,OY,N*T,N*T);
+  if(placing){const o=occ(S.builds);x.fillStyle='rgba(255,255,255,.25)';for(let i=0;i<N;i++)for(let j=0;j<N;j++)if(o[j][i]<0)x.fillRect(OX+i*T+1,OY+j*T+1,T-2,T-2)}
+  (mode==='village'?S.builds:bb).forEach((b,i)=>{if(!b.dead)drawB(b,i)});
+  if(mode==='battle'){
+    tr.forEach(u=>{const r=u.k==='g'?9:6;x.fillStyle=TR[u.k].c;x.strokeStyle='#222';x.lineWidth=1.5;x.beginPath();x.arc(u.x,u.y,r,0,7);x.fill();x.stroke();x.fillStyle='#0008';x.fillRect(u.x-7,u.y-r-5,14,3);x.fillStyle='#4cd964';x.fillRect(u.x-7,u.y-r-5,14*Math.max(0,u.hp/TR[u.k].hp),3)});
+    fx.forEach(f=>{if(f.p){x.globalAlpha=Math.max(0,f.l*2);x.fillStyle=f.col;x.fillRect(f.a,f.b,3,3);x.globalAlpha=1}else{x.strokeStyle=f.col;x.lineWidth=2;x.beginPath();x.moveTo(f.a,f.b);x.lineTo(f.c,f.d);x.stroke()}});
+    x.fillStyle='rgba(0,0,0,.45)';x.fillRect(OX,OY+N*T+0,0,0);x.fillStyle='#fff';x.font='bold 12px sans-serif';x.textAlign='left';x.textBaseline='top';x.fillText('★'.repeat(stars())+'☆'.repeat(3-stars())+'  '+Math.round(pct()*100)+'%',OX+4,OY+3);
+  }
+}
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(mode==='village'){S.builds.forEach(b=>{if(isCol(b.t))b.s=Math.min(colCap(b),b.s+.5*b.l*dt)});saveT+=dt;if(saveT>5){saveT=0;save()}}
+  else if(!over)battle(dt);
+  hud();draw();requestAnimationFrame(loop);
+}
+function tileAt(e){const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W,py=(e.clientY-r.top)/r.height*W;return{px,py,tx:Math.floor((px-OX)/T),ty:Math.floor((py-OY)/T)}}
+cv.addEventListener('pointerdown',e=>{
+  const{px,py,tx,ty}=tileAt(e);if(tx<0||ty<0||tx>=N||ty>=N)return;
+  if(mode==='village'){
+    const o=occ(S.builds);
+    if(placing){
+      const z=BT[placing].s;let ok=tx+z<=N&&ty+z<=N;for(let a=0;a<z&&ok;a++)for(let c=0;c<z;c++)if(o[ty+a][tx+c]>=0){ok=false;break}
+      if(ok&&S.gold>=BT[placing].cost&&cnt(placing)<maxc(placing)){S.gold-=BT[placing].cost;S.builds.push(mkB(placing,tx,ty));selB=S.builds.length-1;placing=null;save();beep(500);infoPanel()}
+      else panel('اینجا نمی‌شود ساخت (جای خالی یا طلا کافی نیست).');
+      return;
+    }
+    selB=o[ty][tx];infoPanel();beep(380,.03);
+  }else if(!over){
+    if(!hand[selT]){panel('این نوع سرباز تمام شده.');return}
+    if(bb.some(b=>!b.dead&&tx>=b.x-1&&tx<=b.x+BT[b.t].s&&ty>=b.y-1&&ty<=b.y+BT[b.t].s)){panel('نزدیک ساختمان‌ها نمی‌توانی پیاده کنی.');return}
+    hand[selT]--;tr.push({k:selT,x:px,y:py,hp:TR[selT].hp,tg:null});beep(600,.04);bar();
+  }
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+  if(a==='build'){placing=null;buildPanel()}
+  else if(a==='army')armyPanel();
+  else if(a==='attack')startBattle();
+  else if(a==='pick'){placing=b.dataset.t;panel('روی یک خانه‌ی خالی بزن تا '+BT[placing].n+' ساخته شود. <button class="b" data-a="cancel">لغو</button>')}
+  else if(a==='cancel'){placing=null;infoPanel()}
+  else if(a==='train'){const k=b.dataset.k;if(S.elixir>=TR[k].cost&&army()+TR[k].sz<=acap()){S.elixir-=TR[k].cost;S.troops[k]++;save();beep(520);armyPanel()}}
+  else if(a==='collect'){const bd=S.builds[selB],key=bd.t==='gm'?'gold':'elixir',room=cap()-S[key],take=Math.min(room,Math.floor(bd.s));S[key]+=take;bd.s-=take;save();beep(800,.08);infoPanel()}
+  else if(a==='upg'){const bd=S.builds[selB],up=bd.t==='th'?800*bd.l:Math.round(BT[bd.t].cost*bd.l*1.2);if(S.gold>=up&&bd.l<3){S.gold-=up;bd.l++;bd.hp=bd.mh=BT[bd.t].hp*(1+.35*(bd.l-1));save();beep(700,.1);infoPanel()}}
+  else if(a==='selT'){selT=b.dataset.k;bar()}
+  else if(a==='surr'&&mode==='battle'&&!over)finish();
+});
+$('ob').onclick=backHome;
+load();bar();infoPanel();hud();requestAnimationFrame(loop);
+window.addEventListener('pagehide',save);
+</script>
+</body>
+</html>

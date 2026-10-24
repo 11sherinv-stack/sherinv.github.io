@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Truth or Dare</title>
+<style>
+:root{--bg:#f1eaf8;--ink:#2a1b3d;--muted:#7b6a90;--card:#fff;--line:rgba(110,70,160,.25);--btn:#8e44d6;--btnink:#fff;--ring:#e7d9f5;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1129;--ink:#f1e6fb;--muted:#b6a3cc;--card:#2a1b3d;--line:rgba(200,160,255,.25);--btn:#b57bff;--btnink:#1b0b2e;--ring:#2e1e45}}
+:root[data-theme="dark"]{--bg:#1c1129;--ink:#f1e6fb;--muted:#b6a3cc;--card:#2a1b3d;--line:rgba(200,160,255,.25);--btn:#b57bff;--btnink:#1b0b2e;--ring:#2e1e45}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 8px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+input,select,button.b{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+input{width:min(60vw,200px)}
+button.b{cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+button:disabled{opacity:.5}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:3px 6px 3px 12px;font-size:.85rem}
+.chip button{border:0;background:none;color:var(--muted);font-size:1rem;cursor:pointer}
+.wheel{--s:min(92vw,400px);position:relative;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle,var(--ring) 0 30%,transparent 31%),conic-gradient(from 0deg,rgba(142,68,214,.12),rgba(255,160,77,.12),rgba(47,213,195,.12),rgba(142,68,214,.12));border:2px solid var(--line);margin:8px 0}
+.pl{position:absolute;transform:translate(-50%,-50%);min-width:56px;max-width:90px;text-align:center;background:var(--card);border:2px solid var(--line);border-radius:20px;padding:5px 8px;font-size:.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .3s,transform .3s}
+.pl.hit{background:#ffd23f;color:#2a1b3d;transform:translate(-50%,-50%) scale(1.2);border-color:#fff;z-index:2}
+#bt{position:absolute;left:50%;top:50%;width:16%;height:44%;margin:-22% 0 0 -8%;transform-origin:50% 50%;will-change:transform}
+#bt svg{width:100%;height:100%;display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
+.big{font-size:1.15rem;padding:12px 30px}
+.ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(20,8,36,.86);color:#fff;text-align:center;padding:20px;z-index:20}
+.ov h2{margin:0;font-size:1.4rem}.ov .q{font-size:1.25rem;line-height:2;max-width:420px;background:rgba(255,255,255,.1);border-radius:16px;padding:14px 18px}
+.ov .b{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4)}
+.ov .pr{background:var(--btn);color:var(--btnink);border:0}
+.hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center;max-width:420px}
+details{width:min(92vw,420px);margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+summary{cursor:pointer;font-size:.85rem}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🍾 Truth or Dare</h1>
+<div class="row"><input id="pn" maxlength="14" placeholder="نام بازیکن" aria-label="نام بازیکن"><button class="b" id="add">افزودن</button></div>
+<div class="row" id="chips"></div>
+<div class="wheel" id="wh"><div id="pls"></div><div id="bt"><svg viewBox="0 0 40 120" aria-hidden="true"><path d="M16 4h8v18c0 8 10 12 10 28v62c0 4-4 6-8 6H14c-4 0-8-2-8-6V50c0-16 10-20 10-28z" fill="#2e9e5b" stroke="#fff" stroke-width="2"/><rect x="14" y="0" width="12" height="7" rx="2" fill="#d9f24a"/><rect x="10" y="62" width="20" height="30" rx="3" fill="#fff" opacity=".85"/></svg></div></div>
+<button class="b pr big" id="spin">🌀 بچرخان</button>
+<details><summary>➕ افزودن سؤال یا چالش دلخواه</summary>
+  <div class="row"><select id="ctp"><option value="t">حقیقت</option><option value="d">جرئت</option></select><input id="cin" maxlength="120" placeholder="متن سؤال یا چالش"><button class="b" id="cad">افزودن</button></div>
+</details>
+<div class="hint">نوک بطری به هر کس برسد، همان نفر «حقیقت» یا «جرئت» را انتخاب می‌کند.</div>
+<div class="ov" id="ov"><h2 id="who"></h2><div class="row" id="ch"><button class="b big" id="bT">🤔 حقیقت</button><button class="b big" id="bD">🔥 جرئت</button></div><div class="q" id="q" style="display:none"></div><div class="row" id="ac" style="display:none"><button class="b pr big" id="ok">✓ انجام شد</button><button class="b" id="sk">رد کردن 😅</button></div></div>
+<script>
+const $=i=>document.getElementById(i);
+const TR=['بزرگ‌ترین ترس تو چیست؟','آخرین دروغی که گفتی چه بود؟','خجالت‌آورترین لحظه‌ی زندگی‌ات کدام بود؟','اگر یک روز نامرئی بودی چه می‌کردی؟','چه عادت بدی داری که دوست نداری کسی بداند؟','عجیب‌ترین غذایی که خورده‌ای چیست؟','بهترین خاطره‌ی کودکی‌ات چیست؟','یک راز کوچک بگو که کسی نمی‌داند.','چه چیزی تو را خیلی زود عصبانی می‌کند؟','اگر فقط یک آهنگ را تا آخر عمر می‌توانستی گوش بدهی، کدام بود؟','آخرین باری که گریه کردی کی بود و چرا؟','بدترین هدیه‌ای که گرفته‌ای چه بود؟','چه استعداد پنهانی داری؟','اگر می‌توانستی یک چیز در خودت عوض کنی، چه بود؟','عجیب‌ترین خوابی که دیده‌ای چه بود؟','اگر یک میلیارد داشتی اول چه می‌خریدی؟','کدام فیلم یا سریال را پنهانی دوست داری؟','بدترین نمره‌ات در مدرسه چه بود؟','اگر می‌توانستی با یک آدم مشهور شام بخوری، چه کسی را انتخاب می‌کردی؟','چه چیزی در گوشی‌ات هست که از دیدنش خجالت می‌کشی؟','اگر یک ابرقدرت داشتی، چه بود؟','بزرگ‌ترین آرزویت چیست؟','کدام یک از حاضران را بیشتر از بقیه شبیه خودت می‌دانی؟','آخرین باری که از ته دل خندیدی کی بود؟'];
+const DR=['۱۰ ثانیه مثل مرغ صدا دربیار.','یک جوک بگو که همه بخندند.','۱۰ بار پشت‌سرهم بپر.','یک جمله را با لهجه‌ی دیگری بگو.','یک رقص خنده‌دار ۱۵ ثانیه‌ای انجام بده.','مثل مجری اخبار، وضع آب‌وهوا را بخوان.','یک نفر را تقلید کن تا بقیه حدس بزنند.','۳۰ ثانیه فقط با اشاره حرف بزن.','در ۱۰ ثانیه اسم ۱۰ حیوان را بگو.','با چشم‌بسته یک نقاشی بکش.','تا نوبت بعدی مثل ربات حرف بزن.','یک بیت شعر یا ترانه بخوان.','۲۰ ثانیه حرکت ورزشی انجام بده.','یک جمله بگو که همه‌ی کلمه‌هایش با «م» شروع شوند.','یک داستان ۱۰ ثانیه‌ای بساز.','با دماغت اسمت را در هوا بنویس.','مثل یک حیوان راه برو و صدایش را دربیار.','یک نفر را انتخاب کن و از او تعریف کن.','با صدای بلند از ۱ تا ۱۰ بشمار ولی هر ۳ تا یک بار بپر.','یک ادا دربیار و بقیه حدس بزنند.','مثل کودک خردسال گریه‌ی ساختگی کن.','شعر کودکانه را با آهنگ اپرا بخوان.','۱۵ ثانیه ثابت بایست و نخند.','یک چهره‌ی خنده‌دار بساز و ۱۰ ثانیه نگه دار.'];
+let pls=[],angle=0,spinning=false,cT=[],cD=[],used={t:[],d:[]},cur=-1,au;
+try{pls=JSON.parse(localStorage.getItem('td-players'))||[];cT=JSON.parse(localStorage.getItem('td-ct'))||[];cD=JSON.parse(localStorage.getItem('td-cd'))||[]}catch(e){}
+if(pls.length<2)pls=['بازیکن ۱','بازیکن ۲','بازیکن ۳','بازیکن ۴'];
+function beep(f,d=.08){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function save(){try{localStorage.setItem('td-players',JSON.stringify(pls));localStorage.setItem('td-ct',JSON.stringify(cT));localStorage.setItem('td-cd',JSON.stringify(cD))}catch(e){}}
+function render(hit){
+  $('chips').innerHTML=pls.map((p,i)=>'<span class="chip">'+p.replace(/</g,'&lt;')+' <button data-r="'+i+'" aria-label="حذف">×</button></span>').join('');
+  $('pls').innerHTML=pls.map((p,i)=>{const a=i/pls.length*2*Math.PI;return '<div class="pl'+(i===hit?' hit':'')+'" style="left:'+(50+41*Math.sin(a))+'%;top:'+(50-41*Math.cos(a))+'%">'+p.replace(/</g,'&lt;')+'</div>'}).join('');
+  $('spin').disabled=spinning||pls.length<2;
+}
+$('add').onclick=()=>{const v=$('pn').value.trim();if(!v||pls.length>=10||spinning)return;pls.push(v);$('pn').value='';save();render()};
+$('pn').addEventListener('keydown',e=>{if(e.key==='Enter')$('add').click()});
+$('chips').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b||spinning||pls.length<=2)return;pls.splice(+b.dataset.r,1);save();render()});
+$('spin').onclick=()=>{
+  if(spinning||pls.length<2)return;spinning=true;render();
+  angle+=1440+Math.random()*1080;
+  const bt=$('bt');bt.style.transition='transform 4.4s cubic-bezier(.12,.7,.12,1)';bt.style.transform='rotate('+angle+'deg)';
+  let n=0;const iv=setInterval(()=>{beep(300+(n++%8)*30,.03);if(n>40)clearInterval(iv)},100);
+  setTimeout(()=>{
+    clearInterval(iv);spinning=false;
+    const step=360/pls.length,idx=Math.round(((angle%360)+360)%360/step)%pls.length;
+    cur=idx;render(idx);beep(800,.2);
+    setTimeout(()=>{$('who').textContent=pls[idx]+' — انتخاب کن:';$('ch').style.display='flex';$('q').style.display='none';$('ac').style.display='none';$('ov').style.display='flex'},700);
+  },4500);
+};
+function pick(t){
+  const all=(t==='t'?TR.concat(cT):DR.concat(cD));
+  let pool=all.filter((_,i)=>!used[t].includes(i));if(!pool.length){used[t]=[];pool=all.slice()}
+  const q=pool[Math.floor(Math.random()*pool.length)];used[t].push(all.indexOf(q));
+  $('who').textContent=pls[cur]+(t==='t'?' — حقیقت 🤔':' — جرئت 🔥');
+  $('q').textContent=q;$('q').style.display='block';$('ch').style.display='none';$('ac').style.display='flex';beep(520,.12);
+}
+$('bT').onclick=()=>pick('t');$('bD').onclick=()=>pick('d');
+const close=()=>{$('ov').style.display='none';render()};
+$('ok').onclick=close;$('sk').onclick=close;
+$('cad').onclick=()=>{const v=$('cin').value.trim();if(!v)return;($('ctp').value==='t'?cT:cD).push(v);$('cin').value='';save();$('cin').placeholder='اضافه شد ✓'};
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Happy Bird</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--btn:#14a89b;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--btn:#2fd5c3;--btnink:#08201d}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5;--btn:#2fd5c3;--btnink:#08201d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.2rem}
+.wrap{position:relative}
+canvas{display:block;height:min(calc(100svh - 110px),560px);aspect-ratio:360/560;width:auto;max-width:96vw;border-radius:12px;touch-action:none}
+.over{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,12,18,.68);color:#fff;border-radius:12px;text-align:center;padding:12px}
+.over h2{margin:0;font-size:1.5rem}.over p{margin:0;line-height:1.8}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:10px;padding:10px 24px;cursor:pointer}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.hint{color:var(--muted);font-size:.78rem;margin-top:6px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🐤 Happy Bird</h1>
+<div class="wrap"><canvas id="c" width="360" height="560"></canvas>
+<div class="over" id="over"><h2>باختی!</h2><p id="ms"></p><button id="go">دوباره</button></div></div>
+<div class="hint">ضربه بزن تا پرنده بال بزند · از دیوار پرنده برگرد · به میخ‌ها و سقف و کف نخور</div>
+<script>
+const W=360,H=560,WALL=20,TOP=34,BOT=H-34,BR=13,SL=9,SD=28;
+const $=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d');
+let st='ready',b,dir=1,score=0,coins=0,best=0,side='R',spikes=[],coin=null,tm=0,last=0,au,shake=0,sky=[120,200,255],parts=[];
+const SKY=[[120,200,255],[250,170,110],[110,90,150],[22,30,60]];
+try{best=+localStorage.getItem('happybird-best')||0}catch(e){}
+function beep(f,d=.06,ty='square'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.03*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const spd=()=>Math.min(260,150+score*3);
+function newSpikes(s){
+  side=s;const n=Math.min(2+Math.floor(score/4),7),pool=[...Array(SL).keys()].sort(()=>Math.random()-.5);spikes=pool.slice(0,n);
+  coin=Math.random()<.45?{x:W/2+(Math.random()-.5)*120,y:TOP+80+Math.random()*(BOT-TOP-160)}:null;
+}
+const slotY=i=>TOP+(BOT-TOP)*(i+.5)/SL;
+function reset(){b={x:W/2,y:270,vx:0,vy:0};dir=1;score=0;coins=0;parts=[];newSpikes('R');spikes=[2,6];coin=null;st='ready';$('over').style.display='none'}
+function flap(){
+  if(st==='dead')return;
+  if(st==='ready'){st='play';b.vx=spd()}
+  b.vy=-345;beep(620,.05);
+  for(let i=0;i<5;i++)parts.push({x:b.x,y:b.y+10,vx:(Math.random()-.5)*60,vy:20+Math.random()*50,l:.4});
+}
+function die(){
+  st='dead';shake=12;beep(140,.4,'sawtooth');
+  if(score>best){best=score;try{localStorage.setItem('happybird-best',best)}catch(e){}}
+  $('ms').innerHTML='امتیاز: '+score+' · رکورد: '+best+(coins?' · سکه: '+coins:'');
+  setTimeout(()=>{if(st==='dead')$('over').style.display='flex'},600);
+}
+function update(dt){
+  tm+=dt;
+  if(st==='ready'){b.y=270+Math.sin(tm*5)*8;return}
+  if(st!=='play')return;
+  b.vy+=1050*dt;b.y+=b.vy*dt;b.x+=b.vx*dt;
+  if(dir>0&&b.x+BR>=W-WALL){b.x=W-WALL-BR;dir=-1;score++;b.vx=-spd();newSpikes('L');beep(780,.06,'triangle')}
+  else if(dir<0&&b.x-BR<=WALL){b.x=WALL+BR;dir=1;score++;b.vx=spd();newSpikes('R');beep(780,.06,'triangle')}
+  if(b.y-BR<TOP||b.y+BR>BOT)return die();
+  const near=side==='R'?b.x+BR>W-WALL-SD+6:b.x-BR<WALL+SD-6;
+  if(near&&spikes.some(i=>Math.abs(b.y-slotY(i))<20))return die();
+  if(coin&&Math.hypot(coin.x-b.x,coin.y-b.y)<26){coin=null;coins++;score+=2;beep(1100,.1,'triangle')}
+}
+function drawBird(t,vy){
+  x.save();x.translate(b.x,b.y+4);x.rotate(Math.max(-.45,Math.min(.9,vy/700))*(dir>0?1:-1)*.6);x.scale(.1,.1);x.lineJoin='round';x.lineCap='round';
+  [-60,60].forEach(lx=>{x.beginPath();x.moveTo(lx,55);x.lineTo(lx,140);x.moveTo(lx,140);x.lineTo(lx-28,172);x.moveTo(lx,140);x.lineTo(lx,180);x.moveTo(lx,140);x.lineTo(lx+28,172);x.strokeStyle='#e8742a';x.lineWidth=14;x.stroke()});
+  x.strokeStyle='#2a1f3d';x.lineWidth=12;
+  x.beginPath();x.moveTo(-85,-50);x.lineTo(-85,-160);x.arc(-15,-160,70,Math.PI,0);x.lineTo(55,-50);x.closePath();x.fillStyle='#ffd23f';x.fill();x.stroke();
+  x.beginPath();x.ellipse(0,0,135,67,0,0,7);x.fillStyle='#4f9be8';x.fill();x.stroke();
+  const f=Math.sin(t*22)*28;x.beginPath();x.moveTo(-92,-12);x.quadraticCurveTo(0,14+f,92,-12);x.lineWidth=10;x.stroke();
+  x.fillStyle='#2a1f3d';[-37,7].forEach(ex=>{x.beginPath();x.arc(ex,-160,10,0,7);x.fill()});
+  x.beginPath();x.moveTo(-34,-128);x.lineTo(-15,-98);x.lineTo(4,-128);x.closePath();x.fillStyle='#ff8a3d';x.fill();x.lineWidth=8;x.stroke();
+  x.restore();
+}
+function draw(t){
+  const tg=SKY[Math.floor(score/10)%4];sky=sky.map((q,i)=>q+(tg[i]-q)*.03);
+  x.save();if(shake>0)x.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgb('+sky.map(Math.round).join(',')+')');g.addColorStop(1,'rgb('+sky.map(q=>Math.min(255,Math.round(q*1.25))).join(',')+')');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.fillStyle='rgba(255,255,255,.9)';x.font='bold 150px sans-serif';x.textAlign='center';x.textBaseline='middle';x.globalAlpha=.22;x.fillText(score,W/2,H/2);x.globalAlpha=1;
+  x.fillStyle='#4a5568';x.fillRect(0,0,WALL,H);x.fillRect(W-WALL,0,WALL,H);
+  x.fillStyle='#667085';for(let y=0;y<H;y+=28){x.fillRect(0,y,WALL,3);x.fillRect(W-WALL,y,WALL,3)}
+  x.fillStyle='#e53935';
+  const tri=(px,py,dr)=>{x.beginPath();x.moveTo(px,py-16);x.lineTo(px+dr*SD,py);x.lineTo(px,py+16);x.closePath();x.fill()};
+  spikes.forEach(i=>side==='R'?tri(W-WALL,slotY(i),-1):tri(WALL,slotY(i),1));
+  x.fillStyle='#e53935';
+  for(let px=WALL;px<W-WALL;px+=24){x.beginPath();x.moveTo(px,TOP);x.lineTo(px+12,TOP-18);x.lineTo(px+24,TOP);x.fill();x.beginPath();x.moveTo(px,BOT);x.lineTo(px+12,BOT+18);x.lineTo(px+24,BOT);x.fill()}
+  x.fillStyle='#4a5568';x.fillRect(0,0,W,TOP-18);x.fillRect(0,BOT+18,W,H-BOT-18);
+  if(coin){x.fillStyle='#ffd23f';x.strokeStyle='#b8860b';x.lineWidth=2;x.beginPath();x.arc(coin.x,coin.y,9+Math.sin(t/150)*1.5,0,7);x.fill();x.stroke()}
+  parts.forEach(p=>{x.globalAlpha=Math.max(0,p.l*2.5);x.fillStyle='#fff';x.fillRect(p.x,p.y,3,3)});x.globalAlpha=1;
+  drawBird(tm,b.vy);
+  if(st==='ready'){x.fillStyle='#fff';x.strokeStyle='#0008';x.lineWidth=4;x.font='bold 20px sans-serif';x.textAlign='center';x.strokeText('ضربه بزن تا شروع',W/2,360);x.fillText('ضربه بزن تا شروع',W/2,360)}
+  x.restore();
+}
+function loop(t){
+  const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);
+  parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt});parts=parts.filter(p=>p.l>0);shake=Math.max(0,shake-30*dt);
+  draw(t);requestAnimationFrame(loop);
+}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();flap()});
+addEventListener('keydown',e=>{if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();if(st==='dead'&&$('over').style.display==='flex')reset();else flap()}});
+$('go').onclick=reset;
+reset();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
