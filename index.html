@@ -78,9 +78,11 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 #toast.on{opacity:1}
 .cw{position:relative}.hrt{position:absolute;top:0;right:4px;z-index:3;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.9);color:#e53935;font-size:1.25rem;line-height:1;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}.hrt:active{transform:scale(.88)}
 #tl{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--ink)}
+.fr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.fr b{display:block}.fr small{color:var(--muted);direction:ltr;display:block;font-family:monospace}.fr button{border:0;background:none;color:#e53935;font-size:1.3rem;cursor:pointer}
 .saver *{animation:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <div class="blob b1"></div><div class="blob b2"></div><div id="dim"></div>
@@ -89,15 +91,28 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="hb"><button class="ib" id="mu" aria-label="Music">🔊</button><button class="ib" id="mb" aria-label="Menu">☰ Menu</button></div>
 </header>
 <nav id="menu">
-  <button data-s="games">🎮 Games</button><button data-s="favorites">❤️ Favorite Games</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
+  <button data-s="games">🎮 Games</button><button data-s="favorites">❤️ Favorite Games</button><button data-s="friends">👥 Friends</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
 </nav>
 <main>
 <section id="games"><h2>Games</h2><p class="sub">یک صفحه‌ی گرامافون را انتخاب کن تا بازی در تب جدید شروع شود.</p><div class="grid" id="gr"></div></section>
 
 <section id="favorites" hidden><h2>Favorite Games</h2><p class="sub">بازی‌هایی که با ❤ علامت زده‌ای اینجا جمع می‌شوند.</p><div class="grid" id="fgr"></div><p class="sub" id="fempty" style="text-align:center;margin-top:40px">هنوز بازی مورد علاقه‌ای نداری. روی ♡ کنار هر بازی بزن.</p></section>
 
+<section id="friends" hidden>
+  <h2>Friends</h2><p class="sub">دوستانت را با آیدی اضافه کن. آیدی خودت در بخش Account است.</p>
+  <div class="box">
+    <label for="fid">Friend ID</label><input type="text" id="fid" placeholder="SL-ABC234" autocapitalize="characters" autocomplete="off" maxlength="9" style="direction:ltr;text-transform:uppercase">
+    <label for="fnm">نام (اختیاری)</label><input type="text" id="fnm" maxlength="20">
+    <div class="ctr" style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="pr" id="fadd">➕ Add</button><button class="al" id="fscan">📷 Scan QR</button></div>
+  </div>
+  <div class="box" id="scanbox" hidden><video id="svid" playsinline muted style="width:100%;border-radius:10px"></video><div class="ctr" style="margin-top:8px"><button class="al" id="sstop">Stop</button></div></div>
+  <div class="box"><b>My Friends</b><div id="flist"></div></div>
+  <p class="sub" style="font-size:.76rem">توجه: این سایت سرور ندارد؛ فهرست دوستان فقط روی همین دستگاه ذخیره می‌شود و نمی‌توان بررسی کرد که آیدی واقعاً وجود دارد یا دوستت آنلاین است.</p>
+</section>
+
 <section id="account" hidden>
   <h2>Account</h2><p class="sub">اطلاعات فقط روی همین دستگاه ذخیره می‌شود.</p>
+  <div class="box ctr"><div class="sub" style="margin:0">My ID</div><div id="myid" style="font-size:1.6rem;font-weight:800;letter-spacing:2px;direction:ltr;color:var(--tq)"></div><div id="qr" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;margin:10px 0;min-height:60px"></div><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="al" id="cpid">📋 Copy ID</button><button class="al" id="cplk">🔗 Copy invite link</button></div><p class="sub" style="font-size:.74rem;margin:8px 0 0">دوستت می‌تواند این QR را اسکن کند یا آیدی را در بخش Friends وارد کند.</p></div>
   <div class="box">
     <div class="av" id="av">🙂</div>
     <div class="ctr"><button class="al" id="ph">📷 انتخاب عکس از گالری</button><input type="file" id="file" accept="image/*" hidden></div>
@@ -199,7 +214,7 @@ $('rs').onclick=()=>{stats={};LS.set('sl-stats',stats);renderStats();toast('آم
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(au)au.suspend()}else{settle();if(au&&musicOn)au.resume()}});
 addEventListener('focus',settle);
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
-const SEC=['games','favorites','account','category','settings','creator'];
+const SEC=['games','favorites','friends','account','category','settings','creator'];
 function go(n){SEC.forEach(s=>$(s).hidden=s!==n);document.querySelectorAll('#menu button').forEach(b=>b.classList.toggle('on',b.dataset.s===n));$('menu').classList.remove('open');scrollTo(0,0)}
 document.querySelectorAll('#menu button').forEach(b=>b.onclick=()=>go(b.dataset.s));
 $('mb').onclick=e=>{e.stopPropagation();$('menu').classList.toggle('open')};
@@ -266,7 +281,51 @@ function addUsage(s){const u=LS.get('sl-day',{d:'',s:0});LS.set('sl-day',{d:dayK
 $('tl').value=String(limit);
 $('tl').onchange=e=>{limit=+e.target.value;LS.set('sl-limit',limit);renderTime();toast(limit?'سقف روزانه تنظیم شد':'محدودیت برداشته شد')};
 $('shr').onclick=async()=>{const url=location.href;try{if(navigator.share){await navigator.share({title:'S loop',text:'Play games on S loop!',url});return}}catch(e){if(e&&e.name==='AbortError')return}try{await navigator.clipboard.writeText(url);toast('Link copied ✓')}catch(e){toast(url)}};
-renderProfile();renderStats();musicBtn();renderTime();go('games');settle();
+/* ---- my ID, QR, friends ---- */
+const ALPH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+let myId=LS.get('sl-id',null);
+if(!myId){myId='SL-';for(let i=0;i<6;i++)myId+=ALPH[Math.floor(Math.random()*ALPH.length)];LS.set('sl-id',myId)}
+let friends=LS.get('sl-friends',[]),scanning=false,stream=null;
+const idOK=s=>/^SL-[A-HJ-NP-Z2-9]{6}$/.test(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function inviteLink(){const base=(location.origin&&location.origin!=='null')?location.origin+location.pathname:String(location.href).split(/[?#]/)[0];return base+'?add='+myId+'&n='+encodeURIComponent(P.name||'')}
+function renderQR(){
+  $('myid').textContent=myId;const q=$('qr');q.innerHTML='';
+  try{new QRCode(q,{text:inviteLink(),width:176,height:176,correctLevel:QRCode.CorrectLevel.M})}
+  catch(e){q.style.cssText='display:block;word-break:break-all;font-size:.72rem;direction:ltr;padding:10px;border-radius:10px;background:var(--card)';q.textContent=inviteLink()}
+}
+function renderFriends(){
+  $('flist').innerHTML=friends.length?friends.map((f,i)=>'<div class="fr"><div><b>'+esc(f.name||f.id)+'</b><small>'+esc(f.id)+'</small></div><button data-rm="'+i+'" aria-label="Remove">×</button></div>').join(''):'<p class="sub" style="margin:8px 0 0">هنوز دوستی اضافه نکرده‌ای.</p>';
+}
+function copyText(t,msg){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg)).catch(()=>toast(t))}
+$('cpid').onclick=()=>copyText(myId,'ID copied ✓');
+$('cplk').onclick=()=>copyText(inviteLink(),'Invite link copied ✓');
+$('sv').addEventListener('click',()=>setTimeout(renderQR,60));
+$('fadd').onclick=()=>{
+  const id=$('fid').value.trim().toUpperCase(),nm=$('fnm').value.trim();
+  if(!idOK(id))return toast('آیدی نامعتبر است (مثل SL-ABC234)');
+  if(id===myId)return toast('این آیدی خودت است 😄');
+  if(friends.some(f=>f.id===id))return toast('این دوست قبلاً اضافه شده');
+  friends.push({id,name:nm||id,t:Date.now()});LS.set('sl-friends',friends);$('fid').value='';$('fnm').value='';renderFriends();toast('دوست اضافه شد ✓');
+};
+$('flist').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;friends.splice(+b.dataset.rm,1);LS.set('sl-friends',friends);renderFriends()});
+function handleInvite(text){
+  let id='',nm='';
+  try{const u=new URL(text);id=(u.searchParams.get('add')||'').toUpperCase();nm=u.searchParams.get('n')||''}catch(e){id=String(text).trim().toUpperCase()}
+  if(!idOK(id)){toast('QR یا لینک معتبر نیست');return false}
+  $('fid').value=id;$('fnm').value=nm;go('friends');toast('برای افزودن، دکمه‌ی Add را بزن');return true;
+}
+function stopScan(){scanning=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('scanbox').hidden=true}
+$('sstop').onclick=stopScan;
+$('fscan').onclick=async()=>{
+  if(!('BarcodeDetector' in window)||!navigator.mediaDevices){toast('اسکن QR در این مرورگر پشتیبانی نمی‌شود — آیدی را دستی وارد کن');return}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});const v=$('svid');v.srcObject=stream;await v.play();$('scanbox').hidden=false;scanning=true;
+    const det=new BarcodeDetector({formats:['qr_code']});
+    (async function tick(){if(!scanning)return;try{const r=await det.detect(v);if(r.length){const ok=handleInvite(r[0].rawValue);stopScan();if(ok)return}}catch(e){}setTimeout(tick,300)})();
+  }catch(e){toast('دسترسی به دوربین ممکن نشد')}
+};
+renderProfile();renderStats();musicBtn();renderTime();go('games');settle();renderFriends();renderQR();try{const ad=new URLSearchParams(location.search).get('add');if(ad)handleInvite(String(location.href))}catch(e){}
 if(musicOn)toast('🎵 برای شروع موسیقی یک بار روی صفحه بزن');
 </script>
 </body>
