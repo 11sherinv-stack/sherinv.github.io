@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rubik Cube</title>
+<style>
+:root{--bg:#e9edf5;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141821;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220}}
+:root[data-theme="dark"]{--bg:#141821;--ink:#e8ecf3;--muted:#99a3b5;--card:#232833;--line:#384052;--btn:#5b94f5;--btnink:#0b1220}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 4px;font-size:1.25rem}
+.hud{display:flex;gap:8px;margin-bottom:4px}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:2px 14px;text-align:center;font-size:.7rem;color:var(--muted)}
+.hud b{display:block;font-size:1rem;color:var(--ink)}
+canvas{display:block;width:min(96vw,420px);aspect-ratio:1;touch-action:none;border-radius:14px;background:radial-gradient(circle at 50% 40%,var(--card),var(--bg))}
+.row{display:flex;gap:6px;margin:5px 0;flex-wrap:wrap;justify-content:center}
+.mv{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:min(96vw,420px);direction:ltr;margin-top:4px}
+button{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;padding:9px 6px}
+.mv button{font-weight:800;font-size:1rem}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+button:active{filter:brightness(1.15)}
+button:disabled{opacity:.45}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#msg{min-height:1.6em;font-weight:700;margin:4px 0}
+.hint{color:var(--muted);font-size:.74rem;margin-top:6px;text-align:center;max-width:420px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🧊 Rubik Cube</h1>
+<div class="hud"><div>زمان<b id="tm">۰:۰۰</b></div><div>حرکت<b id="mv">۰</b></div><div>بهترین زمان<b id="bs">—</b></div></div>
+<canvas id="c" width="420" height="420"></canvas>
+<div id="msg"></div>
+<div class="mv" id="mvs"></div>
+<div class="row"><button class="pr" id="sc">🔀 مخلوط کن</button><button id="sv">🤖 حل خودکار</button><button id="rs">↺ ریست</button></div>
+<div class="hint">با کشیدن روی مکعب، آن را بچرخان. دکمه‌ها وجه‌ها را می‌چرخانند: U بالا · D پایین · L چپ · R راست · F جلو · B عقب (علامت ' یعنی خلاف عقربه‌ها).</div>
+<script>
+const $=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d'),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const FACES={U:[0,1,0],D:[0,-1,0],L:[-1,0,0],R:[1,0,0],F:[0,0,1],B:[0,0,-1]};
+const FCOL={'0,1,0':'#f5f5f5','0,-1,0':'#ffd500','0,0,1':'#1fa34a','0,0,-1':'#1e5bd8','-1,0,0':'#ff7a1a','1,0,0':'#d62828'};
+const I3=[[1,0,0],[0,1,0],[0,0,1]];
+let cubies,queue=[],anim=null,hist=[],yaw=-.6,pitch=.55,moves=0,t0=0,tmr,scrambled=false,best=0,au;
+try{best=+localStorage.getItem('rubik-best')||0}catch(e){}
+function beep(f,d=.04){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.03*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const mmul=(a,b)=>a.map((r,i)=>[0,1,2].map(j=>r[0]*b[0][j]+r[1]*b[1][j]+r[2]*b[2][j]));
+const mvec=(m,v)=>m.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+function rot(n,a){ // rotation about unit axis n by angle a (right-hand rule)
+  const[nx,ny,nz]=n,c=Math.cos(a),s=Math.sin(a),t=1-c;
+  return[[t*nx*nx+c,t*nx*ny-s*nz,t*nx*nz+s*ny],[t*nx*ny+s*nz,t*ny*ny+c,t*ny*nz-s*nx],[t*nx*nz-s*ny,t*ny*nz+s*nx,t*nz*nz+c]];
+}
+const rnd=m=>m.map(r=>r.map(v=>Math.round(v)));
+function reset(){
+  cubies=[];for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)for(let c=-1;c<=1;c++)if(a||b||c)cubies.push({o:[a,b,c],p:[a,b,c],R:I3});
+  queue=[];anim=null;hist=[];moves=0;t0=0;scrambled=false;clearInterval(tmr);$('tm').textContent=fa('0:00');$('mv').textContent='۰';$('msg').textContent='';
+}
+function layer(f){const n=FACES[f];return cubies.filter(q=>q.p[0]*n[0]+q.p[1]*n[1]+q.p[2]*n[2]===1)}
+function queueMove(f,prime,ms,rec){queue.push({f,prime,ms,rec})}
+function nextAnim(){
+  if(anim||!queue.length)return;
+  const m=queue.shift(),n=FACES[m.f];
+  anim={m,n,cs:layer(m.f),t:0,dir:m.prime?1:-1};   // clockwise seen from outside = -90deg about outward normal
+}
+function finishAnim(){
+  const a=anim,R=rnd(rot(a.n,a.dir*Math.PI/2));
+  a.cs.forEach(q=>{q.p=rnd([mvec(R,q.p)])[0];q.R=rnd(mmul(R,q.R))});
+  if(a.m.rec){hist.push([a.m.f,a.m.prime]);if(a.m.rec===true){moves++;$('mv').textContent=fa(moves);if(scrambled&&!t0){t0=Date.now();tmr=setInterval(tick,250)}}}
+  anim=null;beep(300+Math.random()*100);
+  if(!queue.length&&scrambled&&solved()){
+    scrambled=false;clearInterval(tmr);const s=t0?Math.floor((Date.now()-t0)/1000):0;
+    if(t0&&(!best||s<best)){best=s;try{localStorage.setItem('rubik-best',best)}catch(e){}$('msg').textContent='🏆 رکورد جدید! '+fmt(s)}else $('msg').textContent='🎉 حل شد! '+(t0?fmt(s):'');
+    beep(900,.25);t0=0;hist=[];showBest();
+  }
+}
+const fmt=s=>fa(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'));
+function tick(){$('tm').textContent=fmt(Math.floor((Date.now()-t0)/1000))}
+function showBest(){$('bs').textContent=best?fmt(best):'—'}
+function solved(){
+  const seen={};
+  for(const q of cubies)for(const nl of[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]){
+    if(q.o[0]*nl[0]+q.o[1]*nl[1]+q.o[2]*nl[2]!==1)continue;
+    const w=mvec(q.R,nl).map(Math.round).join(','),col=FCOL[nl.join(',')];
+    if(seen[w]&&seen[w]!==col)return false;seen[w]=col;
+  }
+  return true;
+}
+function scramble(){
+  if(anim||queue.length)return;reset();scrambled=true;$('msg').textContent='مخلوط شد — حلش کن!';
+  let last='';for(let i=0;i<22;i++){let f;do{f='UDLRFB'[Math.floor(Math.random()*6)]}while(f===last);last=f;queueMove(f,Math.random()<.5,70,'s')}
+  // scramble moves should not count as player moves
+  queue.push({f:'U',prime:false,ms:0,marker:true});
+}
+function solve(){
+  if(anim||queue.length||!hist.length)return;
+  const h=hist.slice().reverse();hist=[];scrambled=false;clearInterval(tmr);t0=0;
+  h.forEach(([f,p])=>queueMove(f,!p,110,false));$('msg').textContent='در حال حل…';
+}
+function project(v){
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+  let X=v[0]*cy+v[2]*sy,Z=-v[0]*sy+v[2]*cy,Y=v[1]*cp-Z*sp;Z=v[1]*sp+Z*cp;
+  const f=7/(7-Z);return[210+X*f*62,210-Y*f*62,Z];
+}
+const AX=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+function ortho(nl){return nl[0]?[[0,1,0],[0,0,1]]:nl[1]?[[1,0,0],[0,0,1]]:[[1,0,0],[0,1,0]]}
+function draw(){
+  x.clearRect(0,0,420,420);
+  const polys=[];
+  cubies.forEach(q=>{
+    let R=q.R,p=q.p;
+    if(anim&&anim.cs.includes(q)){const ar=rot(anim.n,anim.dir*Math.PI/2*Math.min(1,anim.t));R=mmul(ar,q.R);p=mvec(ar,q.p)}
+    AX.forEach(nl=>{
+      const wn=mvec(R,nl),cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+      const nz=wn[1]*sp+(-wn[0]*sy+wn[2]*cy)*cp;
+      if(nz<=.001)return;
+      const[a,b]=ortho(nl),sticker=q.o[0]*nl[0]+q.o[1]*nl[1]+q.o[2]*nl[2]===1;
+      const mk=s=>[[-1,-1],[1,-1],[1,1],[-1,1]].map(([u,v])=>{const lc=[nl[0]*.5+a[0]*u*s+b[0]*v*s,nl[1]*.5+a[1]*u*s+b[1]*v*s,nl[2]*.5+a[2]*u*s+b[2]*v*s],w=mvec(R,lc);return project([p[0]+w[0],p[1]+w[1],p[2]+w[2]])});
+      const pts=mk(.5),z=(pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4;
+      polys.push({pts,z,col:'#15171c',st:false});
+      if(sticker)polys.push({pts:mk(.43),z:z+.001,col:FCOL[nl.join(',')],st:true});
+    });
+  });
+  polys.sort((a,b)=>a.z-b.z);
+  polys.forEach(o=>{x.beginPath();o.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.fillStyle=o.col;x.fill();if(!o.st){x.strokeStyle='#000';x.lineWidth=1;x.stroke()}});
+}
+let last=0;
+function tickAnim(dt){
+  if(!anim)nextAnim();
+  if(anim){
+    const m=anim.m;if(m.marker){anim=null;scrambled=true;moves=0;$('mv').textContent='۰'}
+    else{anim.t+=dt/(m.ms/1000||.01);if(anim.t>=1){anim.t=1;finishAnim()}}
+  }
+  if(!anim&&!queue.length&&$('msg').textContent==='در حال حل…')$('msg').textContent='حل شد 🤖';
+}
+function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;tickAnim(dt);draw();requestAnimationFrame(loop)}
+// UI
+$('mvs').innerHTML='UDLRFB'.split('').map(f=>'<button data-f="'+f+'">'+f+'</button>').join('')+'UDLRFB'.split('').map(f=>'<button data-f="'+f+'" data-p="1">'+f+'\'</button>').join('');
+$('mvs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||queue.length>3)return;queueMove(b.dataset.f,!!b.dataset.p,200,true)});
+$('sc').onclick=scramble;$('sv').onclick=solve;$('rs').onclick=()=>{if(!anim){queue=[];reset()}};
+let drag=null;
+cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-drag.x)*.01;pitch=Math.max(-1.3,Math.min(1.3,pitch+(e.clientY-drag.y)*.01));drag={x:e.clientX,y:e.clientY}});
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,()=>drag=null));
+addEventListener('keydown',e=>{const f=e.key.toUpperCase();if('UDLRFB'.includes(f)&&f.length===1)queueMove(f,e.shiftKey,200,true)});
+reset();showBest();requestAnimationFrame(loop);
+</script>
+</body>
+</html>

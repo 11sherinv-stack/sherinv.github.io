@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Connect 4</title>
+<style>
+:root{--bg:#e9eef8;--ink:#14213d;--muted:#5f6f8c;--card:#fff;--line:rgba(30,50,110,.25);--btn:#2d6cdf;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1424;--ink:#e6ecfa;--muted:#8f9fc0;--card:#18213a;--line:rgba(140,170,240,.25);--btn:#6aa0ff;--btnink:#0b1220}}
+:root[data-theme="dark"]{--bg:#0e1424;--ink:#e6ecfa;--muted:#8f9fc0;--card:#18213a;--line:rgba(140,170,240,.25);--btn:#6aa0ff;--btnink:#0b1220}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.score{display:flex;gap:10px;margin:6px 0}
+.score div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px 16px;text-align:center;font-size:.75rem;color:var(--muted)}
+.score b{display:block;font-size:1.2rem}
+.score .r b{color:#e53935}.score .y b{color:#e0a800}
+#stt{min-height:1.8em;font-weight:700;margin:4px 0}
+canvas{display:block;width:min(96vw,420px);aspect-ratio:350/350;border-radius:14px;touch-action:none;cursor:pointer}
+.hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center;max-width:420px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🔴🟡 Connect 4</h1>
+<div class="row">
+  <select id="md" aria-label="حالت"><option value="1">مقابل کامپیوتر</option><option value="2">دو نفره</option></select>
+  <select id="lv" aria-label="سطح"><option value="1">آسان</option><option value="2" selected>متوسط</option><option value="3">سخت</option></select>
+  <select id="st" aria-label="شروع‌کننده"><option value="0">من شروع می‌کنم</option><option value="1">کامپیوتر شروع کند</option></select>
+  <button class="b pr" id="nw">دور جدید</button>
+</div>
+<div class="score"><div class="r">🔴<b id="sr">۰</b></div><div>مساوی<b id="sd">۰</b></div><div class="y">🟡<b id="sy">۰</b></div></div>
+<div id="stt"></div>
+<canvas id="c" width="350" height="350"></canvas>
+<div class="hint">ستونی را بزن تا مهره بیفتد. چهار مهره‌ی هم‌رنگ در یک ردیف (افقی، عمودی یا مورب) برنده است.</div>
+<script>
+const $=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d'),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const COLS=7,ROWS=6,CS=50,OY=50;
+let bd,turn,mode=1,lvl=2,over=false,drop=null,win=null,sc=[0,0,0],hover=3,busy=false,au,aiSide=1;
+try{sc=JSON.parse(localStorage.getItem('c4-score'))||sc}catch(e){}
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const newBoard=()=>Array.from({length:ROWS},()=>Array(COLS).fill(0));
+const rowFor=(b,c)=>{for(let r=ROWS-1;r>=0;r--)if(!b[r][c])return r;return -1};
+function lineAt(b,r,c,p){
+  for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){
+    const cells=[[r,c]];
+    for(const s of[1,-1]){let rr=r+dr*s,cc=c+dc*s;while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&b[rr][cc]===p){cells.push([rr,cc]);rr+=dr*s;cc+=dc*s}}
+    if(cells.length>=4)return cells;
+  }
+  return null;
+}
+const ORDER=[3,2,4,1,5,0,6];
+function evalB(b,p){
+  let s=0;const q=3-p;
+  for(let r=0;r<ROWS;r++)if(b[r][3]===p)s+=3;else if(b[r][3]===q)s-=3;
+  const win4=(cells)=>{let a=0,o=0;cells.forEach(([r,c])=>{if(b[r][c]===p)a++;else if(b[r][c]===q)o++});if(a&&o)return 0;if(a===3)return 5;if(a===2)return 2;if(o===3)return -6;if(o===2)return -2;return 0};
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){
+    const er=r+dr*3,ec=c+dc*3;if(er<0||er>=ROWS||ec<0||ec>=COLS)continue;
+    s+=win4([0,1,2,3].map(k=>[r+dr*k,c+dc*k]));
+  }
+  return s;
+}
+function negamax(b,d,al,be,p,last){
+  if(last&&lineAt(b,last[0],last[1],last[2]))return -(1000+d);
+  let any=false;for(let c=0;c<COLS;c++)if(!b[0][c]){any=true;break}
+  if(!any)return 0;
+  if(d===0)return evalB(b,p);
+  let best=-1e9;
+  for(const c of ORDER){
+    const r=rowFor(b,c);if(r<0)continue;
+    b[r][c]=p;const v=-negamax(b,d-1,-be,-al,3-p,[r,c,p]);b[r][c]=0;
+    if(v>best)best=v;if(best>al)al=best;if(al>=be)break;
+  }
+  return best;
+}
+function aiMove(p){
+  const b=bd.map(r=>r.slice()),q=3-p,cols=ORDER.filter(c=>rowFor(b,c)>=0);
+  for(const c of cols){const r=rowFor(b,c);b[r][c]=p;if(lineAt(b,r,c,p)){b[r][c]=0;return c}b[r][c]=0}
+  for(const c of cols){const r=rowFor(b,c);b[r][c]=q;if(lineAt(b,r,c,q)){b[r][c]=0;if(lvl>1||Math.random()<.6)return c}b[r][c]=0}
+  if(lvl===1)return cols[Math.floor(Math.random()*cols.length)];
+  const depth=lvl===2?4:6;let best=-1e9,bc=cols[0];
+  for(const c of cols){
+    const r=rowFor(b,c);b[r][c]=p;
+    const v=-negamax(b,depth-1,-1e9,1e9,q,[r,c,p])+Math.random()*.5;b[r][c]=0;
+    if(v>best){best=v;bc=c}
+  }
+  return bc;
+}
+function newRound(){
+  mode=+$('md').value;lvl=+$('lv').value;bd=newBoard();over=false;drop=null;win=null;busy=false;
+  aiSide=+$('st').value===1?1:2;turn=1;
+  $('lv').style.display=$('st').style.display=mode===1?'':'none';
+  status();
+  if(mode===1&&+$('st').value===1){turn=2;aiSide=2;busy=true;status();setTimeout(aiTurn,500)}
+}
+function status(){
+  if(over)return;
+  $('stt').textContent=mode===1?(turn===1?'نوبت توست 🔴':'کامپیوتر فکر می‌کند… 🟡'):'نوبت بازیکن '+fa(turn)+(turn===1?' 🔴':' 🟡');
+}
+function play(c){
+  if(over||drop||bd[0][c])return;
+  const r=rowFor(bd,c);drop={c,r,y:OY-CS/2,p:turn,v:0};busy=true;
+}
+function land(){
+  const{c,r,p}=drop;bd[r][c]=p;drop=null;beep(240,.08);
+  const w=lineAt(bd,r,c,p);
+  if(w){over=true;win=w;sc[p===1?0:1]++;save();$('stt').textContent=mode===1?(p===1?'🎉 تو بردی!':'😅 کامپیوتر برد'):'🏆 بازیکن '+fa(p)+' برنده شد';beep(p===1?900:200,.35);busy=false;return}
+  if(bd[0].every(Boolean)){over=true;sc[2]++;save();$('stt').textContent='🤝 مساوی شد';busy=false;return}
+  turn=3-turn;status();
+  if(mode===1&&turn!==1)setTimeout(aiTurn,450);else busy=false;
+}
+function aiTurn(){if(over)return;const c=aiMove(turn);busy=true;drop=null;play(c)}
+function save(){try{localStorage.setItem('c4-score',JSON.stringify(sc))}catch(e){}hud()}
+function hud(){$('sr').textContent=fa(sc[0]);$('sy').textContent=fa(sc[1]);$('sd').textContent=fa(sc[2])}
+function draw(t){
+  x.clearRect(0,0,350,350);
+  x.fillStyle='#1f4fc4';x.beginPath();x.roundRect(0,OY,350,300,14);x.fill();
+  const COLC=['','#e53935','#ffd23f'];
+  // discs behind board
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const cx=c*CS+CS/2,cy=OY+r*CS+CS/2,v=bd[r][c];
+    x.beginPath();x.arc(cx,cy,CS*.4,0,7);
+    if(v){x.fillStyle=COLC[v];x.fill();x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=3;x.stroke();x.beginPath();x.arc(cx,cy,CS*.24,0,7);x.strokeStyle='rgba(0,0,0,.15)';x.lineWidth=2;x.stroke()}
+    else{x.fillStyle='#0c1e52';x.fill()}
+  }
+  if(drop){x.fillStyle=COLC[drop.p];x.beginPath();x.arc(drop.c*CS+CS/2,drop.y,CS*.4,0,7);x.fill();x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=3;x.stroke()}
+  if(win){x.strokeStyle='#fff';x.lineWidth=5;win.forEach(([r,c])=>{x.beginPath();x.arc(c*CS+CS/2,OY+r*CS+CS/2,CS*.4+Math.sin(t/120)*1.5,0,7);x.stroke()})}
+  if(!over&&!drop&&!busy){x.fillStyle=COLC[turn];x.globalAlpha=.65;x.beginPath();x.arc(hover*CS+CS/2,OY/2,CS*.36,0,7);x.fill();x.globalAlpha=1}
+}
+let last=0;
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(drop){drop.v+=1800*dt;drop.y+=drop.v*dt;const ty=OY+drop.r*CS+CS/2;if(drop.y>=ty){drop.y=ty;land()}}
+  draw(t);requestAnimationFrame(loop);
+}
+const colOf=e=>{const r=cv.getBoundingClientRect();return Math.max(0,Math.min(COLS-1,Math.floor((e.clientX-r.left)/r.width*COLS)))};
+cv.addEventListener('pointermove',e=>{hover=colOf(e)});
+cv.addEventListener('pointerdown',e=>{hover=colOf(e);if(busy||over||(mode===1&&turn!==1))return;play(hover)});
+addEventListener('keydown',e=>{if(e.key>='1'&&e.key<='7'&&!busy&&!over&&!(mode===1&&turn!==1))play(+e.key-1)});
+$('nw').onclick=newRound;['md','lv','st'].forEach(i=>$(i).onchange=newRound);
+hud();newRound();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
