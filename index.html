@@ -88,6 +88,23 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 #aichips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 #aichips button{font-size:.78rem;padding:5px 10px}
 .aiin{display:flex;gap:8px}.aiin input{flex:1}
+#sfw{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:40;display:flex;align-items:center;gap:8px;direction:ltr}
+#sfab{width:54px;height:54px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--tq),var(--lime));font-size:1.7rem;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer;animation:bob 3s ease-in-out infinite;flex:none}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.sbub{position:relative;background:var(--head);color:#f1f8d0;border-radius:16px 16px 4px 16px;padding:8px 26px 8px 12px;font-size:.82rem;max-width:210px;direction:rtl;box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer;transition:opacity .4s,transform .4s}
+.sbub.off{opacity:0;transform:translateX(10px);pointer-events:none}
+.sbub button{position:absolute;top:2px;left:4px;border:0;background:none;color:inherit;font-size:1rem;cursor:pointer;line-height:1}
+#spop{position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 82px);width:min(92vw,360px);height:min(72vh,540px);background:var(--bg1);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:45;display:flex;flex-direction:column;overflow:hidden;direction:rtl}
+#spop[hidden]{display:none}
+.sph{background:var(--head);color:#f1f8d0;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+.sph button{border:0;background:none;color:inherit;font-size:1.3rem;cursor:pointer}
+#spop .smsgs{flex:1;max-height:none}
+#spop .schips,#spop .aiin{padding:6px 8px}
+.smsgs{display:flex;flex-direction:column;overflow-y:auto;padding:4px 8px;max-height:48vh;min-height:120px}
+.schips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;overflow-x:auto}
+.schips button{font-size:.76rem;padding:4px 10px;white-space:nowrap}
+.sr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.bub.typ{opacity:.6}
 .saver *{animation:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -100,7 +117,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="hb"><button class="ib" id="mu" aria-label="Music">🔊</button><button class="ib" id="mb" aria-label="Menu">☰ Menu</button></div>
 </header>
 <nav id="menu">
-  <button data-s="games">🎮 Games</button><button data-s="favorites">❤️ Favorite Games</button><button data-s="friends">👥 Friends</button><button data-s="ai">🤖 AI</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
+  <button data-s="games">🎮 Games</button><button data-s="favorites">❤️ Favorite Games</button><button data-s="friends">👥 Friends</button><button data-s="ai">🤖 AI</button><button data-s="support">🎧 Support</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
 </nav>
 <main>
 <section id="games"><h2>Games</h2><p class="sub">یک صفحه‌ی گرامافون را انتخاب کن تا بازی در تب جدید شروع شود.</p><div class="grid" id="gr"></div></section>
@@ -124,6 +141,12 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="box"><div id="aimsgs"></div><div id="aichips"></div>
     <div class="aiin"><input type="text" id="aiin" placeholder="سؤالت را بنویس…" autocomplete="off" aria-label="پیام"><button class="pr" id="aisend">ارسال</button></div>
     <div class="ctr" style="margin-top:8px"><button class="al" id="aiclr">🗑 پاک‌کردن گفتگو</button></div></div>
+</section>
+
+<section id="support" hidden>
+  <h2>Support</h2><p class="sub">چت‌های پشتیبانی اینجا می‌مانند. پشتیبان، هوش مصنوعی ساده‌ی سایت است و پیام‌ها فقط روی همین دستگاه ذخیره می‌شوند (به انسان ارسال نمی‌شوند).</p>
+  <div class="box"><div class="sr"><b>گفتگوی فعلی</b><button class="al" id="supnew">➕ چت جدید</button></div><div class="smsgs" id="sm2"></div><div class="schips" id="sc2"></div><div class="aiin"><input type="text" id="si2" placeholder="مشکل یا سؤالت را بنویس…" autocomplete="off" aria-label="پیام پشتیبانی"><button class="pr" id="ss2">ارسال</button></div></div>
+  <div class="box"><b>چت‌های قبلی</b><div id="suplist"></div></div>
 </section>
 
 <section id="account" hidden>
@@ -165,6 +188,8 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="box ctr"><button class="pr" id="shr">🔗 Share S loop</button><p class="sub" style="margin:8px 0 0;font-size:.78rem">Share this site with your friends</p></div>
 </section>
 </main>
+<div id="sfw"><div class="sbub" id="sbub" role="button" tabindex="0">چه کمکی از دستم بر می‌آید؟<button id="sbx" aria-label="Close">×</button></div><button id="sfab" aria-label="Support" title="Support">🎧</button></div>
+<div id="spop" hidden><div class="sph"><b>🎧 پشتیبانی S loop</b><button id="spx" aria-label="Close">×</button></div><div class="smsgs" id="sm"></div><div class="schips" id="sc"></div><div class="aiin"><input type="text" id="si" placeholder="چه کمکی از دستم بر می‌آید؟" autocomplete="off" aria-label="پیام پشتیبانی"><button class="pr" id="ss">ارسال</button></div></div>
 <div id="toast"></div><noscript><ul><li><a href="snake.html">Snake Advanced</a></li><li><a href="arena.html">Arena Battle</a></li><li><a href="2048.html">2048</a></li><li><a href="tetris.html">Tetris</a></li><li><a href="dino.html">Dino Run</a></li><li><a href="flappy.html">Flappy Bird Advanced</a></li><li><a href="maze.html">Maze</a></li><li><a href="sudoku.html">Sudoku</a></li><li><a href="candy.html">Candy Match</a></li><li><a href="breakout.html">Breakout</a></li><li><a href="tictactoe.html">Tic Tac Toe</a></li><li><a href="chess.html">Chess</a></li><li><a href="memory.html">Memory Cards</a></li><li><a href="ludo.html">Ludo</a></li><li><a href="snakeladder.html">Snakes &amp; Ladders</a></li><li><a href="uno.html">UNO</a></li><li><a href="airhockey.html">Air Hockey</a></li><li><a href="skyraid.html">Sky Raid</a></li><li><a href="happybird.html">Happy Bird</a></li><li><a href="seabattle.html">Sea Battle</a></li><li><a href="riverjet.html">River Jet</a></li><li><a href="truthdare.html">Truth or Dare</a></li><li><a href="solitaire.html">Solitaire</a></li><li><a href="raiders.html">Clan Raiders</a></li><li><a href="pinball.html">Pinball</a></li><li><a href="rps.html">Rock Paper Scissors</a></li><li><a href="pixelhero.html">Pixel Hero</a></li><li><a href="watersort.html">Water Sort</a></li><li><a href="rubik.html">Rubik Cube</a></li><li><a href="connect4.html">Connect 4</a></li></ul></noscript>
 <script>
 const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
@@ -233,7 +258,7 @@ $('rs').onclick=()=>{stats={};LS.set('sl-stats',stats);renderStats();toast('آم
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(au)au.suspend()}else{settle();if(au&&musicOn)au.resume()}});
 addEventListener('focus',settle);
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
-const SEC=['games','favorites','friends','ai','account','category','settings','creator'];
+const SEC=['games','favorites','friends','ai','support','account','category','settings','creator'];
 function go(n){SEC.forEach(s=>$(s).hidden=s!==n);document.querySelectorAll('#menu button').forEach(b=>b.classList.toggle('on',b.dataset.s===n));$('menu').classList.remove('open');scrollTo(0,0)}
 document.querySelectorAll('#menu button').forEach(b=>b.onclick=()=>go(b.dataset.s));
 $('mb').onclick=e=>{e.stopPropagation();$('menu').classList.toggle('open')};
@@ -418,6 +443,14 @@ AI.CAP={'ایران':'تهران','فرانسه':'پاریس','آلمان':'بر
 AI.JOKES=['معلم: ۵ تا سیب داری، ۳ تا را به علی بدهی چند تا می‌ماند؟ شاگرد: ۵ تا! معلم: چرا؟ شاگرد: چون من سیبم را به کسی نمی‌دهم! 😄','چرا برنامه‌نویس‌ها از طبیعت می‌ترسند؟ چون پر از باگ است 🐛','به کامپیوتر گفتم برو استراحت کن. گفت: من که همیشه Sleep هستم، تو بخواب! 😴','یک ریاضی‌دان به رستوران رفت و گفت: یک پیتزا بدهید، ولی آن را به ۸ تکه تقسیم نکنید؛ من نمی‌توانم بیشتر از ۴ تکه بخورم! 🍕','ماهی به ماهی گفت: امروز آب‌وهوا چطور است؟ آن یکی گفت: خیس! 🐟','چرا مداد گریه کرد؟ چون سرش را تراشیدند! ✏️'];
 AI.FACTS=['🌍 زمین ۷۱٪ آب است، ولی کمتر از ۳٪ آن شیرین است.','🐙 هشت‌پا سه قلب دارد.','⚡ رعد و برق چند برابر داغ‌تر از سطح خورشید است.','🍯 عسل هرگز خراب نمی‌شود.','🧠 مغز انسان حدود ۲۰٪ انرژی بدن را مصرف می‌کند.','🐜 مورچه‌ها می‌توانند ۵۰ برابر وزن خودشان را بلند کنند.'];
 AI.KB=[
+{k:['باز نمی','باز نشد','کار نمی','ارور','404','خراب','لود نمی'],a:'اگر بازی یا صفحه‌ای باز نشد:\n۱) اتصال اینترنت را چک کن\n۲) صفحه را رفرش کن\n۳) پاپ‌آپ (پنجره‌ی جدید) مرورگر را برای سایت مجاز کن\n۴) مرورگر را به‌روز کن (Chrome پیشنهاد می‌شود)\nاگر باز هم مشکل داشت، در بخش Creator سازنده‌ها را ببین.'},
+{k:['پاک شد','پیشرفتم','ذخیره نمی','رکورد پاک','از دست رفت'],a:'پیشرفت، رکوردها، دوستان و تنظیمات روی مرورگر همین دستگاه ذخیره می‌شوند. پاک کردن اطلاعات مرورگر، حالت ناشناس یا استفاده از دستگاه دیگر باعث می‌شود آن‌ها دیده نشوند.'},
+{k:['صدا ندارم','صدا نمی','بی صدا','صدا نیست'],a:'اگر صدا نمی‌آید: ۱) دکمه‌ی 🔊 بالای سایت را چک کن ۲) در Settings صدای موسیقی و بازی‌ها را بالا ببر ۳) گوشی را از حالت سکوت دربیاور ۴) یک بار روی صفحه بزن (مرورگرها پخش صدا را قبل از لمس مجاز نمی‌دانند).'},
+{k:['سایت کند','بازی کند','خیلی کند','لگ','هنگ','داغ می'],a:'اگر سایت یا بازی کند است، در Settings «ذخیره باتری» را روشن کن، تب‌های اضافه را ببند و مرورگر را به‌روز نگه دار.'},
+{k:['گزارش','باگ','پیشنهاد دارم','انتقاد','شکایت','تماس','ارتباط با'],a:'ممنون که می‌خواهی کمک کنی! 🙏 این سایت سرور ندارد، پس پیام‌های اینجا به انسان ارسال نمی‌شود. برای گزارش مشکل یا پیشنهاد، سازنده‌ها (Sherinv، Claude و Maz) را در بخش Creator ببین و با دکمه‌ی Share لینک سایت را برایشان بفرست.'},
+{k:['اکانت','حساب کاربری','ثبت نام','ثبت‌نام','لاگین'],a:'ثبت‌نام لازم نیست. هر کس که وارد سایت شود خودکار یک آیدی (مثل SL-ABC234) می‌گیرد. نام، عکس، Gmail، تلفن و بیو را در بخش Account وارد کن؛ همه فقط روی همین دستگاه ذخیره می‌شوند.'},
+{k:['رایگان','قیمت','هزینه','پولی'],a:'همه‌ی بازی‌های S loop رایگان هستند. 🎉'},
+{k:['موبایل','گوشی','کامپیوتر','دسکتاپ'],a:'سایت هم روی گوشی و هم روی کامپیوتر کار می‌کند. در گوشی کنترل بازی‌ها با لمس و کشیدن است و در کامپیوتر می‌توانی از کیبورد هم استفاده کنی.'},
 {k:['s loop','اس لوپ','این سایت','درباره سایت','سایت چیست'],a:'S loop یک سایت بازی آنلاین رایگان با ظاهر گرامافونی است. هر بازی یک صفحه‌ی گرامافون دارد؛ رویش بزن تا بازی شروع شود. ❤ علاقه‌مندی‌ها، 👥 دوستان، ⏳ مدیریت زمان و حالت ذخیره باتری هم دارد.'},
 {k:['علاقه','قلب','favorite'],a:'روی ♡ کنار هر بازی بزن تا قرمز شود و در بخش Favorite Games بیاید. دوباره بزنی حذف می‌شود.'},
 {k:['دوست','آیدی','qr','کیوآر'],a:'آیدی تو در بخش Account است (مثل SL-ABC234) همراه با QR. در بخش Friends آیدی دوستت را وارد کن یا QR او را اسکن کن. چون سایت سرور ندارد، فهرست دوستان فقط روی همین دستگاه ذخیره می‌شود.'},
@@ -450,6 +483,7 @@ AI.KB=[
 {k:['فرمول آب'],a:'H₂O'},{k:['مساحت دایره'],a:'π × r²'},{k:['محیط دایره'],a:'۲ × π × r'},{k:['فیثاغورس'],a:'در مثلث قائم‌الزاویه: a² + b² = c² (c وتر است).'},
 {k:['عدد پی','عدد π'],a:'تقریباً ۳٫۱۴۱۵۹'},{k:['چند روز سال','روز در سال'],a:'۳۶۵ روز (در سال کبیسه ۳۶۶ روز).'},{k:['چند ثانیه در ساعت','ثانیه در ساعت'],a:'۳۶۰۰ ثانیه.'}
 ];
+AI.KB.forEach(e=>{e.k=e.k.map(AI.norm)});
 AI.TAG={two:['chess','tictactoe','connect4','airhockey','ludo','snakeladder','rps','memory','truthdare'],relax:['watersort','memory','sudoku','maze','solitaire','candy','g2048'],puzzle:['sudoku','g2048','watersort','rubik','maze','chess','connect4','candy','memory','solitaire','tetris'],action:['skyraid','riverjet','pixelhero','dino','flappy','happybird','airhockey','pinball','breakout','snake','arena','raiders'],strat:['chess','raiders','arena','seabattle','connect4','ludo'],card:['uno','solitaire']};
 AI.games=n=>{
   if(!/بازی|game/.test(n)||!/پیشنهاد|چی\s*بازی|چه\s*بازی|معرفی|کدوم|کدام|دو\s*نفره|دونفره|آرام|ریلکس|فکری|ذهنی|اکشن|هیجان|استراتژی|کارتی/.test(n))return null;
@@ -496,6 +530,43 @@ $('aiclr').onclick=()=>{chat=[];LS.set('sl-chat',chat);aiHello()};
 $('aichips').innerHTML=['۲۵×۴+۱۰','۲۰٪ از ۳۵۰','2x+3=11','۱۰ کیلومتر به مایل','امروز چه روزیه؟','بازی دو نفره پیشنهاد بده','قوانین شطرنج','یک جوک بگو'].map(q=>'<button class="al" data-q="'+q+'">'+q+'</button>').join('');
 $('aichips').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b)aiSend(b.dataset.q)});
 if(!chat.length)aiHello();else aiRender();
+
+/* ---- support chats + floating widget ---- */
+let SUPD=LS.get('sl-support',{cur:null,s:[]});if(!SUPD.s)SUPD={cur:null,s:[]};if(!SUPD.s.some(s=>s.id===SUPD.cur))SUPD.cur=SUPD.s.length?SUPD.s[0].id:null;
+const supHello='سلام! 👋 چه کمکی از دستم بر می‌آید؟ من پشتیبان خودکار S loop هستم (هوش مصنوعی ساده و آفلاین). درباره‌ی بازی‌ها، تنظیمات، دوستان یا مشکلات رایج بپرس؛ محاسبه و تبدیل واحد هم بلدم.';
+const supSave=()=>LS.set('sl-support',SUPD);
+const supCurS=()=>SUPD.s.find(s=>s.id===SUPD.cur);
+function supNew(){const s={id:Date.now(),ts:Date.now(),m:[{r:'bot',t:supHello}]};SUPD.s.unshift(s);SUPD.s=SUPD.s.slice(0,30);SUPD.cur=s.id;supSave();supRender()}
+const supMsg=m=>'<div class="bub '+m.r+'">'+esc(m.t).replace(/\n/g,'<br>')+aiLinks(m.g)+'</div>';
+function supRender(){
+  const s=supCurS(),h=s?s.m.map(supMsg).join(''):'<p class="sub" style="margin:8px">برای شروع، پیامت را بنویس یا یکی از پیشنهادها را بزن.</p>';
+  ['sm','sm2'].forEach(id=>{const b=$(id);b.innerHTML=h;b.scrollTop=b.scrollHeight});
+  $('suplist').innerHTML=SUPD.s.length?SUPD.s.map(x=>{const first=(x.m.find(q=>q.r==='me')||{t:'(گفتگوی خالی)'}).t;return '<div class="fr"><div><b>'+esc(first.slice(0,40))+'</b><small>'+fa(new Date(x.ts).toLocaleDateString('en-CA'))+' · '+fa(x.m.length)+' پیام'+(x.id===SUPD.cur?' · فعلی':'')+'</small></div><div style="display:flex;gap:6px;align-items:center"><button class="al" data-op="'+x.id+'">باز کن</button><button data-dl="'+x.id+'" aria-label="Delete">×</button></div></div>'}).join(''):'<p class="sub" style="margin:8px 0 0">هنوز چتی نداری.</p>';
+}
+function supSend(t){
+  t=String(t).trim();if(!t)return;let s=supCurS();if(!s){supNew();s=supCurS()}
+  s.m.push({r:'me',t});supSave();supRender();$('si').value='';$('si2').value='';
+  ['sm','sm2'].forEach(id=>{const b=$(id);b.insertAdjacentHTML('beforeend','<div class="bub bot typ">…</div>');b.scrollTop=b.scrollHeight});
+  setTimeout(()=>{const r=AI.reply(t);s.m.push({r:'bot',t:r.t,g:r.g});s.m=s.m.slice(-60);supSave();supRender()},420);
+}
+const SUPQ=['چطور دوست اضافه کنم؟','بازی باز نمی‌شود','صدا ندارم','پیشرفتم پاک شد','یک بازی پیشنهاد بده','سقف زمان را چطور تنظیم کنم؟'];
+['sc','sc2'].forEach(id=>{$(id).innerHTML=SUPQ.map(q=>'<button class="al" data-q="'+q+'">'+q+'</button>').join('');$(id).addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b)supSend(b.dataset.q)})});
+$('ss').onclick=()=>supSend($('si').value);$('ss2').onclick=()=>supSend($('si2').value);
+$('si').addEventListener('keydown',e=>{if(e.key==='Enter')supSend($('si').value)});$('si2').addEventListener('keydown',e=>{if(e.key==='Enter')supSend($('si2').value)});
+$('supnew').onclick=supNew;
+$('suplist').addEventListener('click',e=>{
+  const o=e.target.closest('[data-op]'),d=e.target.closest('[data-dl]');
+  if(o){SUPD.cur=+o.dataset.op;supSave();supRender()}
+  else if(d){const id=+d.dataset.dl;SUPD.s=SUPD.s.filter(s=>s.id!==id);if(SUPD.cur===id)SUPD.cur=SUPD.s.length?SUPD.s[0].id:null;supSave();supRender()}
+});
+function supToggle(open){
+  const p=$('spop'),want=open===undefined?p.hidden:open;p.hidden=!want;
+  if(want){if(!supCurS()&&!SUPD.s.length)supNew();else supRender();$('sbub').classList.add('off');setTimeout(()=>$('si').focus(),50)}
+}
+$('sfab').onclick=()=>supToggle();$('spx').onclick=()=>supToggle(false);
+$('sbub').onclick=e=>{if(e.target.id==='sbx'){$('sbub').classList.add('off');return}supToggle(true)};
+setTimeout(()=>$('sbub').classList.add('off'),9000);
+supRender();
 renderProfile();renderStats();musicBtn();renderTime();go('games');settle();renderFriends();renderQR();try{const ad=new URLSearchParams(location.search).get('add');if(ad)handleInvite(String(location.href))}catch(e){}
 if(musicOn)toast('🎵 برای شروع موسیقی یک بار روی صفحه بزن');
 </script>
