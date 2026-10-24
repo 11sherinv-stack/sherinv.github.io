@@ -79,6 +79,15 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 .cw{position:relative}.hrt{position:absolute;top:0;right:4px;z-index:3;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.9);color:#e53935;font-size:1.25rem;line-height:1;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}.hrt:active{transform:scale(.88)}
 #tl{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--ink)}
 .fr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.fr b{display:block}.fr small{color:var(--muted);direction:ltr;display:block;font-family:monospace}.fr button{border:0;background:none;color:#e53935;font-size:1.3rem;cursor:pointer}
+#aimsgs{display:flex;flex-direction:column;max-height:52vh;overflow-y:auto;padding:4px}
+.bub{max-width:88%;padding:8px 12px;border-radius:14px;margin:5px 0;line-height:1.9;font-size:.92rem;word-break:break-word}
+.bub.me{align-self:flex-start;background:var(--tq);color:#fff;border-bottom-right-radius:4px}
+.bub.bot{align-self:flex-end;background:var(--field);border:1px solid var(--line);border-bottom-left-radius:4px}
+.ail{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ailink{background:var(--lime);color:#2f3d10;border-radius:12px;padding:3px 10px;font-size:.8rem;text-decoration:none;font-weight:700;direction:ltr}
+#aichips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+#aichips button{font-size:.78rem;padding:5px 10px}
+.aiin{display:flex;gap:8px}.aiin input{flex:1}
 .saver *{animation:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -91,7 +100,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="hb"><button class="ib" id="mu" aria-label="Music">🔊</button><button class="ib" id="mb" aria-label="Menu">☰ Menu</button></div>
 </header>
 <nav id="menu">
-  <button data-s="games">🎮 Games</button><button data-s="favorites">❤️ Favorite Games</button><button data-s="friends">👥 Friends</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
+  <button data-s="games">🎮 Games</button><button data-s="favorites">❤️ Favorite Games</button><button data-s="friends">👥 Friends</button><button data-s="ai">🤖 AI</button><button data-s="account">👤 Account</button><button data-s="category">🗂️ Category</button><button data-s="settings">⚙️ Settings</button><button data-s="creator">✨ Creator</button>
 </nav>
 <main>
 <section id="games"><h2>Games</h2><p class="sub">یک صفحه‌ی گرامافون را انتخاب کن تا بازی در تب جدید شروع شود.</p><div class="grid" id="gr"></div></section>
@@ -108,6 +117,13 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   <div class="box" id="scanbox" hidden><video id="svid" playsinline muted style="width:100%;border-radius:10px"></video><div class="ctr" style="margin-top:8px"><button class="al" id="sstop">Stop</button></div></div>
   <div class="box"><b>My Friends</b><div id="flist"></div></div>
   <p class="sub" style="font-size:.76rem">توجه: این سایت سرور ندارد؛ فهرست دوستان فقط روی همین دستگاه ذخیره می‌شود و نمی‌توان بررسی کرد که آیدی واقعاً وجود دارد یا دوستت آنلاین است.</p>
+</section>
+
+<section id="ai" hidden>
+  <h2>AI</h2><p class="sub">دستیار ساده‌ی S loop: محاسبه، حل معادله‌ی ساده، تبدیل واحد، ساعت و تاریخ، قوانین بازی‌ها و سؤال‌های ساده. (آفلاین است و هوش مصنوعی بزرگ نیست.)</p>
+  <div class="box"><div id="aimsgs"></div><div id="aichips"></div>
+    <div class="aiin"><input type="text" id="aiin" placeholder="سؤالت را بنویس…" autocomplete="off" aria-label="پیام"><button class="pr" id="aisend">ارسال</button></div>
+    <div class="ctr" style="margin-top:8px"><button class="al" id="aiclr">🗑 پاک‌کردن گفتگو</button></div></div>
 </section>
 
 <section id="account" hidden>
@@ -200,7 +216,7 @@ function toggleFav(id){
 document.addEventListener('click',e=>{const h=e.target.closest('.hrt');if(h){e.preventDefault();toggleFav(h.dataset.f)}});
 $('gr').innerHTML=GM.map(cardHTML).join('');renderFav();
 let gv=LS.get('sl-gv',80),mv=LS.get('sl-mv',40),musicOn=LS.get('sl-music',true),stats=LS.get('sl-stats',{}),P=LS.get('sl-profile',{name:'',email:'',phone:'',bio:'',avatar:''});
-document.addEventListener('click',e=>{const a=e.target.closest('.card');if(!a)return;if(blocked()){e.preventDefault();toast('⏳ زمان بازی امروز تمام شد — در Settings می‌توانی سقف را تغییر بدهی');return}const g=GM.find(x=>x.id===a.dataset.id);a.href=g.u+'#v'+gv;LS.set('sl-pending',{id:g.id,t:Date.now()})});
+document.addEventListener('click',e=>{const a=e.target.closest('.card,.ailink');if(!a)return;if(blocked()){e.preventDefault();toast('⏳ زمان بازی امروز تمام شد — در Settings می‌توانی سقف را تغییر بدهی');return}const g=GM.find(x=>x.id===a.dataset.id);a.href=g.u+'#v'+gv;LS.set('sl-pending',{id:g.id,t:Date.now()})});
 function settle(){
   const p=LS.get('sl-pending',null);if(!p)return;
   const s=Math.min((Date.now()-p.t)/1000,10800);
@@ -217,7 +233,7 @@ $('rs').onclick=()=>{stats={};LS.set('sl-stats',stats);renderStats();toast('آم
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(au)au.suspend()}else{settle();if(au&&musicOn)au.resume()}});
 addEventListener('focus',settle);
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
-const SEC=['games','favorites','friends','account','category','settings','creator'];
+const SEC=['games','favorites','friends','ai','account','category','settings','creator'];
 function go(n){SEC.forEach(s=>$(s).hidden=s!==n);document.querySelectorAll('#menu button').forEach(b=>b.classList.toggle('on',b.dataset.s===n));$('menu').classList.remove('open');scrollTo(0,0)}
 document.querySelectorAll('#menu button').forEach(b=>b.onclick=()=>go(b.dataset.s));
 $('mb').onclick=e=>{e.stopPropagation();$('menu').classList.toggle('open')};
@@ -328,6 +344,158 @@ $('fscan').onclick=async()=>{
     (async function tick(){if(!scanning)return;try{const r=await det.detect(v);if(r.length){const ok=handleInvite(r[0].rawValue);stopScan();if(ok)return}}catch(e){}setTimeout(tick,300)})();
   }catch(e){toast('دسترسی به دوربین ممکن نشد')}
 };
+/* ---- AI assistant (offline, rule-based) ---- */
+const AI={};
+AI.norm=s=>String(s).replace(/[۰-۹]/g,d=>d.charCodeAt(0)-1776).replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200c\u200f\u200e]/g,' ').replace(/[،؛]/g,',').replace(/٪/g,'%').replace(/×/g,'*').replace(/÷/g,'/').replace(/[–—−]/g,'-').replace(/\s+/g,' ').trim().toLowerCase();
+AI.num=n=>{if(!isFinite(n))return 'تعریف نشده';const r=Math.round(n*1e6)/1e6;return fa(String(r)).replace('.','٫')};
+AI.evalExpr=(src,xv)=>{
+  const s=src.replace(/,/g,'.').replace(/\s+/g,'');let i=0;
+  const F={sqrt:Math.sqrt,sin:v=>Math.sin(v*Math.PI/180),cos:v=>Math.cos(v*Math.PI/180),tan:v=>Math.tan(v*Math.PI/180),log:Math.log10,ln:Math.log,abs:Math.abs};
+  const isD=c=>c>='0'&&c<='9',isL=c=>c>='a'&&c<='z';
+  function expr(){let v=term();while(s[i]==='+'||s[i]==='-'){const o=s[i++],r=term();v=o==='+'?v+r:v-r}return v}
+  function term(){let v=pow();for(;;){
+    if(s[i]==='*'){i++;v*=pow()}else if(s[i]==='/'){i++;v/=pow()}
+    else if(s[i]==='%'&&i+1<s.length&&/[\d(a-z]/.test(s[i+1])){i++;v%=pow()}
+    else if(i<s.length&&(isD(s[i])||s[i]==='('||isL(s[i])))v*=pow();else break}return v}
+  function pow(){const b=unary();if(s[i]==='^'){i++;return Math.pow(b,pow())}return b}
+  function unary(){if(s[i]==='-'){i++;return -unary()}if(s[i]==='+'){i++;return unary()}return post()}
+  function post(){let v=prim();while(s[i]==='%'&&!(i+1<s.length&&/[\d(a-z]/.test(s[i+1]))){i++;v/=100}return v}
+  function prim(){
+    if(s[i]==='('){i++;const v=expr();if(s[i]!==')')throw 0;i++;return v}
+    if(isD(s[i])||s[i]==='.'){let j=i;while(isD(s[j])||s[j]==='.')j++;const v=parseFloat(s.slice(i,j));if(isNaN(v))throw 0;i=j;return v}
+    if(isL(s[i])){let j=i;while(isL(s[j]||''))j++;const id=s.slice(i,j);i=j;
+      if(id==='pi')return Math.PI;if(id==='e')return Math.E;if(id==='x')return xv;
+      if(F[id]){const a=s[i]==='('?prim():unary();return F[id](a)}throw 0}
+    throw 0}
+  const v=expr();if(i<s.length)throw 0;return v;
+};
+AI.math=n=>{
+  const pm=n.match(/(\d+(?:\.\d+)?)\s*(?:%|درصد)\s*(?:از|of)\s*(\d+(?:\.\d+)?)/);
+  if(pm)return{t:'🧮 '+fa(pm[1])+'٪ از '+fa(pm[2])+' = '+AI.num(pm[1]*pm[2]/100)};
+  let t=n;
+  [[/ضرب\s*در|ضربدر/g,'*'],[/(^|\s)در\s+(?=[\d(])/g,'$1*'],[/تقسیم\s*بر/g,'/'],[/به\s*علاوه|بعلاوه|\bplus\b/g,'+'],[/منهای|\bminus\b/g,'-'],[/به\s*توان|توان/g,'^'],[/جذر|ریشه\s*دوم|ریشه|رادیکال/g,'sqrt'],[/باقی\s*مانده|\bmod\b/g,'%']].forEach(([a,b])=>t=t.replace(a,b));
+  t=t.replace(/حساب\s*کن|محاسبه\s*کن|حل\s*کن|چند\s*می\s*شه|چند\s*میشه|چند\s*می\s*شود|چنده|چند\s*است|حاصل|برابر\s*است\s*با|برابر|چقدر\s*می\s*شه|چقدر\s*میشه|چقدره|نتیجه|مساوی|[؟?!]/g,' ').replace(/\s+/g,' ').trim().replace(/=\s*$/,'').trim();
+  const rest=t.replace(/sqrt|sin|cos|tan|log|ln|abs|pi/g,'');
+  if(t.includes('=')&&/x/.test(t)&&!/[a-wyz]/.test(rest)){
+    const[L,R]=t.split('=');
+    try{
+      const f=v=>AI.evalExpr(L,v)-AI.evalExpr(R,v),b=f(0),a=f(1)-b;
+      if(Math.abs(a)<1e-12)return{t:Math.abs(b)<1e-12?'بی‌شمار جواب دارد.':'این معادله جواب ندارد.'};
+      if(Math.abs(f(2)-(2*a+b))>1e-6)return{t:'فعلاً فقط معادله‌های خطی (مثل 2x+3=11) را حل می‌کنم.'};
+      return{t:'🧮 x = '+AI.num(-b/a)};
+    }catch(e){return null}
+  }
+  if(!/\d|pi/.test(t)||!/[+\-*/^%]|sqrt|sin|cos|tan|log|ln|abs/.test(t)||/[a-z]/.test(rest))return null;
+  try{const v=AI.evalExpr(t,0);if(typeof v!=='number'||isNaN(v))return null;return{t:'🧮 '+AI.num(v)}}catch(e){return null}
+};
+AI.U={km:['km','کیلومتر'],mi:['mile','miles','mi','مایل'],m:['m','متر'],ft:['ft','foot','feet','فوت','پا'],cm:['cm','سانتی متر','سانتیمتر'],inch:['inch','in','اینچ'],kg:['kg','کیلو','کیلوگرم'],lb:['lb','lbs','پوند'],g:['g','گرم'],c:['c','°c','سانتیگراد','درجه سانتیگراد','سلسیوس'],f:['f','°f','فارنهایت','درجه فارنهایت'],l:['l','لیتر'],gal:['gal','gallon','گالن']};
+AI.F={km:['len',1000],mi:['len',1609.344],m:['len',1],ft:['len',.3048],cm:['len',.01],inch:['len',.0254],kg:['mass',1],lb:['mass',.45359237],g:['mass',.001],l:['vol',1],gal:['vol',3.785411784],c:['temp'],f:['temp']};
+AI.unit=w=>{w=w.trim();for(const k in AI.U)if(AI.U[k].includes(w))return k;return null};
+AI.units=n=>{
+  const m=n.match(/(-?\d+(?:\.\d+)?)\s*([^\d]+?)\s+(?:به|to|into)\s+([^\d]+?)\s*[؟?]?$/);if(!m)return null;
+  const v=+m[1],a=AI.unit(m[2]),b=AI.unit(m[3]);if(!a||!b)return null;
+  const A=AI.F[a],B=AI.F[b];if(A[0]!==B[0])return{t:'این دو واحد قابل تبدیل به هم نیستند.'};
+  let r;if(A[0]==='temp'){const c=a==='c'?v:(v-32)*5/9;r=b==='c'?c:c*9/5+32}else r=v*A[1]/B[1];
+  return{t:'📏 '+fa(v)+' '+m[2].trim()+' ≈ '+AI.num(r)+' '+m[3].trim()};
+};
+AI.J=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+AI.W=['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
+AI.toJ=(gy,gm,gd)=>{
+  const gdm=[0,31,59,90,120,151,181,212,243,273,304,334];let jy=gy<=1600?0:979;gy-=gy<=1600?621:1600;
+  const gy2=gm>2?gy+1:gy;let days=365*gy+Math.floor((gy2+3)/4)-Math.floor((gy2+99)/100)+Math.floor((gy2+399)/400)-80+gd+gdm[gm-1];
+  jy+=33*Math.floor(days/12053);days%=12053;jy+=4*Math.floor(days/1461);days%=1461;
+  if(days>365){jy+=Math.floor((days-1)/365);days=(days-1)%365}
+  const jm=days<186?1+Math.floor(days/31):7+Math.floor((days-186)/30),jd=1+(days<186?days%31:(days-186)%30);
+  return[jy,jm,jd];
+};
+AI.dt=n=>{
+  const d=new Date();
+  if(/ساعت\s*(چند|چنده|الان)|الان\s*ساعت|what time/.test(n)||n==='ساعت')return{t:'🕒 ساعت الان '+fa(String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'))+' است.'};
+  if(/امروز|تاریخ|چه\s*روزی|چند\s*شنبه|\bdate\b/.test(n)&&!/بازی/.test(n)){const[jy,jm,jd]=AI.toJ(d.getFullYear(),d.getMonth()+1,d.getDate());return{t:'📅 امروز '+AI.W[d.getDay()]+' '+fa(jd)+' '+AI.J[jm-1]+' '+fa(jy)+'\n('+fa(d.toLocaleDateString('en-CA'))+' میلادی)'}}
+  return null;
+};
+AI.CAP={'ایران':'تهران','فرانسه':'پاریس','آلمان':'برلین','ایتالیا':'رم','اسپانیا':'مادرید','ترکیه':'آنکارا','ژاپن':'توکیو','چین':'پکن','هند':'دهلی نو','روسیه':'مسکو','انگلیس':'لندن','بریتانیا':'لندن','آمریکا':'واشنگتن دی‌سی','کانادا':'اتاوا','برزیل':'برازیلیا','مصر':'قاهره','عراق':'بغداد','عربستان':'ریاض','افغانستان':'کابل','پاکستان':'اسلام‌آباد','یونان':'آتن','سوئد':'استکهلم','استرالیا':'کانبرا','کره جنوبی':'سئول','مکزیک':'مکزیکوسیتی','آرژانتین':'بوینس‌آیرس','هلند':'آمستردام','سوئیس':'برن','لهستان':'ورشو','پرتغال':'لیسبون','ارمنستان':'ایروان','آذربایجان':'باکو','عمان':'مسقط','قطر':'دوحه','امارات':'ابوظبی'};
+AI.JOKES=['معلم: ۵ تا سیب داری، ۳ تا را به علی بدهی چند تا می‌ماند؟ شاگرد: ۵ تا! معلم: چرا؟ شاگرد: چون من سیبم را به کسی نمی‌دهم! 😄','چرا برنامه‌نویس‌ها از طبیعت می‌ترسند؟ چون پر از باگ است 🐛','به کامپیوتر گفتم برو استراحت کن. گفت: من که همیشه Sleep هستم، تو بخواب! 😴','یک ریاضی‌دان به رستوران رفت و گفت: یک پیتزا بدهید، ولی آن را به ۸ تکه تقسیم نکنید؛ من نمی‌توانم بیشتر از ۴ تکه بخورم! 🍕','ماهی به ماهی گفت: امروز آب‌وهوا چطور است؟ آن یکی گفت: خیس! 🐟','چرا مداد گریه کرد؟ چون سرش را تراشیدند! ✏️'];
+AI.FACTS=['🌍 زمین ۷۱٪ آب است، ولی کمتر از ۳٪ آن شیرین است.','🐙 هشت‌پا سه قلب دارد.','⚡ رعد و برق چند برابر داغ‌تر از سطح خورشید است.','🍯 عسل هرگز خراب نمی‌شود.','🧠 مغز انسان حدود ۲۰٪ انرژی بدن را مصرف می‌کند.','🐜 مورچه‌ها می‌توانند ۵۰ برابر وزن خودشان را بلند کنند.'];
+AI.KB=[
+{k:['s loop','اس لوپ','این سایت','درباره سایت','سایت چیست'],a:'S loop یک سایت بازی آنلاین رایگان با ظاهر گرامافونی است. هر بازی یک صفحه‌ی گرامافون دارد؛ رویش بزن تا بازی شروع شود. ❤ علاقه‌مندی‌ها، 👥 دوستان، ⏳ مدیریت زمان و حالت ذخیره باتری هم دارد.'},
+{k:['علاقه','قلب','favorite'],a:'روی ♡ کنار هر بازی بزن تا قرمز شود و در بخش Favorite Games بیاید. دوباره بزنی حذف می‌شود.'},
+{k:['دوست','آیدی','qr','کیوآر'],a:'آیدی تو در بخش Account است (مثل SL-ABC234) همراه با QR. در بخش Friends آیدی دوستت را وارد کن یا QR او را اسکن کن. چون سایت سرور ندارد، فهرست دوستان فقط روی همین دستگاه ذخیره می‌شود.'},
+{k:['محدودیت زمان','مدیریت زمان','سقف بازی','زمان بازی'],a:'در Settings گزینه‌ی «مدیریت زمان» سقف روزانه‌ی بازی را تعیین می‌کند. وقتی سقف تمام شود، باز کردن بازی از سایت بسته می‌شود تا فردا یا تا وقتی سقف را عوض کنی.'},
+{k:['باتری','ذخیره باتری','کم نور','شب'],a:'در Settings حالت «ذخیره باتری» نور صفحه را کم می‌کند، به حالت شب می‌رود و انیمیشن‌ها را خاموش می‌کند.'},
+{k:['موسیقی','آهنگ','صدا'],a:'موسیقی آرام پس‌زمینه با اولین لمس صفحه شروع می‌شود. دکمه‌ی 🔊 بالای صفحه آن را خاموش می‌کند و در Settings صدای موسیقی و بازی‌ها را تنظیم می‌کنی.'},
+{k:['شطرنج','chess'],g:['chess'],a:'♟️ هدف کیش‌ومات کردن شاه حریف است. پیاده یک خانه جلو می‌رود (اولین حرکت می‌تواند دو خانه باشد) و مورب می‌زند؛ اسب L شکل می‌پرد؛ فیل مورب؛ رخ مستقیم؛ وزیر هر دو؛ شاه یک خانه. قلعه‌شدن و آنپاسان هم در بازی هست.'},
+{k:['دوز','tic tac','tictactoe'],g:['tictactoe'],a:'روی جدول ۳×۳ به‌نوبت X و O بگذار؛ سه‌تا در یک ردیف (افقی، عمودی یا مورب) برنده است. در حالت ۴×۴ باید چهارتا بیاوری.'},
+{k:['چهار در ردیف','connect','کانکت'],g:['connect4'],a:'ستونی را انتخاب کن تا مهره‌ات بیفتد. اولین نفری که چهار مهره‌ی هم‌رنگ در یک ردیف (افقی، عمودی یا مورب) بسازد برنده است.'},
+{k:['منچ','لودو','ludo'],g:['ludo'],a:'🎲 برای بیرون آوردن مهره ۶ بیاور. روی مهره‌ی حریف بنشینی آن به خانه برمی‌گردد (جز خانه‌های ستاره‌دار). ۶، زدن مهره و رسیدن به مقصد نوبت اضافه می‌دهد و برای رسیدن به مقصد عدد دقیق لازم است.'},
+{k:['مارپله','مار پله','snakes'],g:['snakeladder'],a:'تاس بینداز و جلو برو. نردبان بالا می‌برد و مار پایین می‌آورد. برای رسیدن به خانه‌ی ۱۰۰ عدد دقیق لازم است و ۶ نوبت اضافه می‌دهد.'},
+{k:['اونو','uno'],g:['uno'],a:'کارتی هم‌رنگ یا هم‌عدد کارت وسط بازی کن. وایلد رنگ را عوض می‌کند. اگر کارتی نداری از دسته بکش. اولین نفری که کارت‌هایش تمام شود برنده است.'},
+{k:['سودوکو','sudoku'],g:['sudoku'],a:'جدول ۹×۹ را با عددهای ۱ تا ۹ پر کن، طوری که در هر ردیف، هر ستون و هر مربع ۳×۳ هر عدد فقط یک بار بیاید. دکمه‌ی یادداشت و راهنما هم دارد.'},
+{k:['2048','۲۰۴۸'],g:['g2048'],a:'با کشیدن، همه‌ی کاشی‌ها حرکت می‌کنند و کاشی‌های هم‌عدد ترکیب می‌شوند. هدف رسیدن به کاشی ۲۰۴۸ است. دکمه‌ی راهنما بهترین حرکت را پیشنهاد می‌دهد.'},
+{k:['تتریس','tetris'],g:['tetris'],a:'مهره‌ها را بچرخان و جابه‌جا کن تا ردیف‌ها کامل و پاک شوند. هرچه چند ردیف را هم‌زمان پاک کنی امتیاز بیشتر است. می‌توانی مهره را نگه داری (Hold) و مهره‌ی شبح محل فرود را نشان می‌دهد.'},
+{k:['مموری','حافظه','memory'],g:['memory'],a:'کارت‌ها را دو‌تا‌دو برگردان و جفت‌های هم‌شکل را پیدا کن. با کمترین حرکت همه‌ی جفت‌ها را پیدا کنی رکورد می‌زنی.'},
+{k:['سنگ کاغذ','قیچی'],g:['rps'],a:'سنگ قیچی را می‌شکند، قیچی کاغذ را می‌برد و کاغذ سنگ را می‌پوشاند. می‌توانی دو نفره هم بازی کنی.'},
+{k:['پینبال','pinball'],g:['pinball'],a:'نیمه‌ی چپ و راست صفحه فلیپرها را می‌زنند. دکمه‌ی LAUNCH را نگه دار و رها کن تا توپ پرتاب شود. به بامپرها و هدف‌ها بزن تا امتیاز بگیری.'},
+{k:['مار پیشرفته','snake','بازی مار'],g:['snake'],a:'مار را هدایت کن و میوه بخور. به دیوار، سنگ‌ها و بدن خودت نخور. آیتم‌های ویژه (سرعت، سپر، دو برابر امتیاز و…) هم ظاهر می‌شوند.'},
+{k:['ماز','maze'],g:['maze'],a:'از خانه‌ی آبی به 🏁 برس. دکمه‌ی راهنما مسیر درست را نشان می‌دهد (با ۵ ثانیه جریمه). حالت تاریک فقط اطراف تو را روشن می‌کند.'},
+{k:['سالیتر','سولیتر','solitaire'],g:['solitaire'],a:'کارت‌ها را به ترتیب نزولی و با رنگ متناوب روی ستون‌ها بچین و آس‌ها تا شاه را روی چهار پایه بالا ببر. روی کارت بزن و بعد مقصد.'},
+{k:['واتر سورت','water sort','لوله'],g:['watersort'],a:'یک لوله را انتخاب کن و بعد لوله‌ی مقصد را. رنگ بالا فقط روی همان رنگ یا لوله‌ی خالی ریخته می‌شود. هر لوله باید یک رنگ شود.'},
+{k:['روبیک','rubik'],g:['rubik'],a:'با کشیدن انگشت مکعب را بچرخان و با دکمه‌های U D L R F B وجه‌ها را بچرخان. «مخلوط کن» و «حل خودکار» هم دارد.'},
+{k:['دریانبرد','sea battle','کشتی جنگی'],g:['seabattle'],a:'روی خانه‌های دریای دشمن شلیک کن. زدن کشتی، نوبت اضافه می‌دهد. اول همه‌ی کشتی‌های دشمن را غرق کن.'},
+{k:['ایر هاکی','هاکی','air hockey'],g:['airhockey'],a:'راکت را با انگشت بکش و توپ را به دروازه‌ی حریف بزن. اولین نفری که به ۷ گل برسد برنده است. دو نفره هم می‌شود.'},
+{k:['کلن','raiders','کلش'],g:['raiders'],a:'ساختمان بساز، منابع جمع کن، سرباز آموزش بده و به دهکده‌ی حریف حمله کن. غول اول به دفاع‌ها حمله می‌کند.'},
+{k:['سرعت نور'],a:'حدود ۳۰۰٬۰۰۰ کیلومتر بر ثانیه.'},{k:['نقطه جوش آب','آب چند درجه'],a:'آب در فشار معمولی در ۱۰۰ درجه‌ی سانتیگراد می‌جوشد.'},
+{k:['چند سیاره','تعداد سیاره'],a:'۸ سیاره: تیر، ناهید، زمین، مریخ، مشتری، زحل، اورانوس و نپتون.'},{k:['بزرگ‌ترین سیاره','بزرگترین سیاره'],a:'مشتری.'},
+{k:['چند قاره','تعداد قاره'],a:'۷ قاره: آسیا، آفریقا، آمریکای شمالی، آمریکای جنوبی، جنوبگان، اروپا و اقیانوسیه.'},{k:['بلندترین قله'],a:'اورست با حدود ۸۸۴۸ متر.'},
+{k:['فرمول آب'],a:'H₂O'},{k:['مساحت دایره'],a:'π × r²'},{k:['محیط دایره'],a:'۲ × π × r'},{k:['فیثاغورس'],a:'در مثلث قائم‌الزاویه: a² + b² = c² (c وتر است).'},
+{k:['عدد پی','عدد π'],a:'تقریباً ۳٫۱۴۱۵۹'},{k:['چند روز سال','روز در سال'],a:'۳۶۵ روز (در سال کبیسه ۳۶۶ روز).'},{k:['چند ثانیه در ساعت','ثانیه در ساعت'],a:'۳۶۰۰ ثانیه.'}
+];
+AI.TAG={two:['chess','tictactoe','connect4','airhockey','ludo','snakeladder','rps','memory','truthdare'],relax:['watersort','memory','sudoku','maze','solitaire','candy','g2048'],puzzle:['sudoku','g2048','watersort','rubik','maze','chess','connect4','candy','memory','solitaire','tetris'],action:['skyraid','riverjet','pixelhero','dino','flappy','happybird','airhockey','pinball','breakout','snake','arena','raiders'],strat:['chess','raiders','arena','seabattle','connect4','ludo'],card:['uno','solitaire']};
+AI.games=n=>{
+  if(!/بازی|game/.test(n)||!/پیشنهاد|چی\s*بازی|چه\s*بازی|معرفی|کدوم|کدام|دو\s*نفره|دونفره|آرام|ریلکس|فکری|ذهنی|اکشن|هیجان|استراتژی|کارتی/.test(n))return null;
+  let key=null,label='';
+  if(/دو\s*نفره|دونفره|با\s*دوست/.test(n)){key='two';label='دو نفره'}else if(/آرام|ریلکس|استرس/.test(n)){key='relax';label='آرام'}
+  else if(/فکری|ذهنی|پازل|معما/.test(n)){key='puzzle';label='فکری'}else if(/اکشن|هیجان|سریع/.test(n)){key='action';label='هیجانی'}
+  else if(/استراتژی/.test(n)){key='strat';label='استراتژیک'}else if(/کارت/.test(n)){key='card';label='کارتی'}
+  let pool=(key?AI.TAG[key]:GM.map(g=>g.id)).filter(id=>GM.some(g=>g.id===id));
+  return{t:'🎮 پیشنهادم'+(label?' ('+label+')':'')+':',g:pool.sort(()=>Math.random()-.5).slice(0,3)};
+};
+AI.small=n=>{
+  const rnd=a=>a[Math.floor(Math.random()*a.length)];
+  if(/^(سلام|درود|هی|های|hi|hello|hey)(?![\u0600-\u06ffa-z])/.test(n))return{t:rnd(['سلام! 👋 من دستیار S loop هستم. هر سؤال ساده‌ای داری بپرس.','درود! 😊 چه کمکی از من برمی‌آید؟'])};
+  if(/حالت چطوره|چطوری|خوبی(?![\u0600-\u06ff])|احوالت/.test(n))return{t:'من خوبم، ممنون! 😄 تو چطوری؟'};
+  if(/اسمت چیه|اسمت چیست|کی هستی|تو کی|خودتو معرفی/.test(n))return{t:'من دستیار ساده‌ی S loop هستم؛ یک چت‌بات آفلاین که محاسبه، تبدیل واحد، تاریخ و ساعت، قوانین بازی‌ها و سؤال‌های ساده را جواب می‌دهد. هوش مصنوعی بزرگ نیستم، پس گاهی نمی‌دانم 🙂'};
+  if(/ممنون|مرسی|دمت گرم|thanks|thank you|سپاس/.test(n))return{t:'خواهش می‌کنم! 🌿'};
+  if(/خداحافظ|بای(?![\u0600-\u06ff])|شب بخیر|bye/.test(n))return{t:'خداحافظ! به امید دیدار 👋'};
+  if(/جوک|لطیفه|بخندون/.test(n))return{t:rnd(AI.JOKES)};
+  if(/نکته\s*(جالب|علمی)|چیز جالب|اطلاعات جالب|fun fact/.test(n))return{t:rnd(AI.FACTS)};
+  if(/کمک|چه کار|چی بلدی|چه کاری|راهنما|امکانات/.test(n))return{t:'می‌توانم:\n🧮 محاسبه و حل معادله‌ی ساده (۲۵×۴+۱۰ ، 2x+3=11)\n📏 تبدیل واحد (۱۰ کیلومتر به مایل)\n📅 ساعت و تاریخ\n🎮 قوانین بازی‌ها و پیشنهاد بازی\n🌍 پایتخت کشورها و چند اطلاعات ساده\n😄 جوک و نکته‌ی جالب'};
+  const c=n.match(/پایتخت\s+(.+?)(?:\s+(?:چیه|چیست|کجاست|کجا است))?\s*[؟?]?$/);
+  if(c){const k=c[1].trim();if(AI.CAP[k])return{t:'🏛️ پایتخت '+k+': '+AI.CAP[k]}}
+  return null;
+};
+AI.kb=n=>{let best=null,bs=0;for(const e of AI.KB){let s=0;for(const k of e.k)if(n.includes(k))s+=k.length>4?2:1;if(s>bs){bs=s;best=e}}return best?{t:best.a,g:best.g}:null};
+AI.reply=q=>{
+  const n=AI.norm(q);
+  return AI.small(n)||AI.units(n)||AI.dt(n)||AI.math(n)||AI.games(n)||AI.kb(n)||{t:'هنوز این را بلد نیستم 🙈\nمی‌توانم محاسبه، تبدیل واحد، ساعت و تاریخ، قوانین بازی‌ها، پیشنهاد بازی، جوک و چند اطلاعات ساده را جواب بدهم. بنویس «کمک» تا فهرست کامل را ببینی.'};
+};
+
+/* ---- AI chat UI ---- */
+let chat=LS.get('sl-chat',[]);
+const aiLinks=g=>g&&g.length?'<div class="ail">'+g.map(id=>{const x=GM.find(q=>q.id===id);return x?'<a class="ailink" data-id="'+id+'" href="'+x.u+'" target="_blank" rel="noopener">🎮 '+esc(x.n)+'</a>':''}).join('')+'</div>':'';
+function aiRender(){const b=$('aimsgs');b.innerHTML=chat.map(m=>'<div class="bub '+m.r+'">'+esc(m.t).replace(/\n/g,'<br>')+aiLinks(m.g)+'</div>').join('');b.scrollTop=b.scrollHeight}
+function aiHello(){chat.push({r:'bot',t:'سلام! 👋 من دستیار ساده‌ی S loop هستم. محاسبه، تبدیل واحد، ساعت و تاریخ، قوانین بازی‌ها و سؤال‌های ساده را جواب می‌دهم. (آفلاین هستم؛ هوش مصنوعی بزرگ نیستم 🙂)'});aiRender()}
+function aiSend(t){
+  t=String(t).trim();if(!t)return;chat.push({r:'me',t});chat=chat.slice(-40);aiRender();$('aiin').value='';
+  const b=$('aimsgs');b.insertAdjacentHTML('beforeend','<div class="bub bot" id="aityp">…</div>');b.scrollTop=b.scrollHeight;
+  setTimeout(()=>{const r=AI.reply(t),ty=$('aityp');if(ty)ty.remove();chat.push({r:'bot',t:r.t,g:r.g});chat=chat.slice(-40);LS.set('sl-chat',chat);aiRender()},380);
+}
+$('aisend').onclick=()=>aiSend($('aiin').value);
+$('aiin').addEventListener('keydown',e=>{if(e.key==='Enter')aiSend($('aiin').value)});
+$('aiclr').onclick=()=>{chat=[];LS.set('sl-chat',chat);aiHello()};
+$('aichips').innerHTML=['۲۵×۴+۱۰','۲۰٪ از ۳۵۰','2x+3=11','۱۰ کیلومتر به مایل','امروز چه روزیه؟','بازی دو نفره پیشنهاد بده','قوانین شطرنج','یک جوک بگو'].map(q=>'<button class="al" data-q="'+q+'">'+q+'</button>').join('');
+$('aichips').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b)aiSend(b.dataset.q)});
+if(!chat.length)aiHello();else aiRender();
 renderProfile();renderStats();musicBtn();renderTime();go('games');settle();renderFriends();renderQR();try{const ad=new URLSearchParams(location.search).get('add');if(ad)handleInvite(String(location.href))}catch(e){}
 if(musicOn)toast('🎵 برای شروع موسیقی یک بار روی صفحه بزن');
 </script>
