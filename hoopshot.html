@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hoop Shot</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1c2230;--muted:#667085;--btn:#ff8a1f;--btnink:#2b1500;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5}}
+:root[data-theme="dark"]{--bg:#14171d;--ink:#e8ecf3;--muted:#99a3b5}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.2rem}
+.wrap{position:relative}
+canvas{display:block;height:min(calc(100svh - 110px),600px);aspect-ratio:360/600;width:auto;max-width:96vw;border-radius:12px;touch-action:none}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(12,14,26,.78);color:#fff;border-radius:12px;text-align:center;padding:14px}
+.ov h2{margin:0;font-size:1.5rem;color:#ffb14d}.ov p{margin:0;line-height:1.8;font-size:.9rem}
+button{font:inherit;border:0;background:var(--btn);color:var(--btnink);border-radius:10px;padding:10px 26px;cursor:pointer;font-weight:700}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.hint{color:var(--muted);font-size:.76rem;margin-top:6px;text-align:center}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🏀 Hoop Shot</h1>
+<div class="wrap"><canvas id="c" width="360" height="600"></canvas>
+<div class="ov" id="ov"><h2 id="ot">HOOP SHOT</h2><p id="om">انگشتت را روی صفحه بگذار و به عقب بکش، بعد رها کن تا توپ پرتاب شود.<br>توپ را در حلقه‌ی بالاتر بینداز. اگر به لبه‌ی حلقه نخورد، امتیاز ویژه (Perfect) می‌گیری!</p><button id="go">START</button></div></div>
+<div class="hint">انگشتت را بکش و رها کن · هرچه بیشتر بکشی، پرتاب قوی‌تر است</div>
+<script>
+const W=360,H=600,BR=14,G=1500,$=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d');
+let st='idle',ball,hoops=[],cur=0,score=0,best=0,streak=0,cam=0,tcam=0,aim=null,last=0,tm=0,au,touched=false,msg='',msgT=0,parts=[];
+try{best=+localStorage.getItem('hoopshot-best')||0}catch(e){}
+function beep(f,d=.05,ty='triangle'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.04*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function mkHoop(y,amp){const w=76,bx=60+Math.random()*(W-120);return{x:bx,bx,y,amp,ph:Math.random()*6,w}}
+function spawn(){const p=hoops[hoops.length-1],amp=score>=6?Math.min(55,(score-5)*7)*(Math.random()<.6?1:0):0;hoops.push(mkHoop(p.y-(170+Math.random()*90),amp))}
+function start(){score=0;streak=0;cur=0;hoops=[{x:W/2,bx:W/2,y:470,amp:0,ph:0,w:76}];spawn();spawn();cam=hoops[0].y-440;tcam=cam;ball={x:W/2,y:478,vx:0,vy:0,rot:0};st='hold';aim=null;touched=false;parts=[];$('ov').style.display='none'}
+function over(){
+  st='over';beep(150,.4,'sawtooth');if(score>best){best=score;try{localStorage.setItem('hoopshot-best',best)}catch(e){}}
+  $('ot').textContent='GAME OVER';$('om').innerHTML='امتیاز: '+score+'<br>رکورد: '+best;$('go').textContent='AGAIN';$('ov').style.display='flex';
+}
+function capture(i){
+  const h=hoops[i];let pts=0;
+  if(i>cur){
+    if(!touched){streak++;pts=1+Math.min(streak,6);msg=streak>1?'PERFECT x'+streak:'PERFECT!'}else{streak=0;pts=1;msg='+1'}
+    score+=pts;msgT=1;beep(700+Math.min(streak,6)*80,.12);
+    for(let k=0;k<10;k++)parts.push({x:h.x,y:h.y,vx:(Math.random()-.5)*260,vy:-Math.random()*220,l:.6,c:'#ffb14d'});
+  }else{streak=0}
+  cur=i;st='hold';touched=false;ball.vx=ball.vy=0;
+  while(hoops.length<cur+3)spawn();
+  tcam=Math.min(tcam,h.y-440);
+}
+function update(dt){
+  tm+=dt;hoops.forEach(h=>{if(h.amp)h.x=Math.max(50,Math.min(W-50,h.bx+Math.sin(tm*1.3+h.ph)*h.amp))});
+  cam+=(tcam-cam)*Math.min(1,dt*5);
+  if(st==='hold'){const h=hoops[cur];ball.x+=(h.x-ball.x)*Math.min(1,dt*14);ball.y+=(h.y+8-ball.y)*Math.min(1,dt*14);return}
+  if(st!=='fly')return;
+  const sub=4,sd=dt/sub;
+  for(let s=0;s<sub;s++){
+    const py=ball.y;ball.vy+=G*sd;ball.x+=ball.vx*sd;ball.y+=ball.vy*sd;
+    if(ball.x<BR){ball.x=BR;ball.vx=Math.abs(ball.vx)*.8}if(ball.x>W-BR){ball.x=W-BR;ball.vx=-Math.abs(ball.vx)*.8}
+    for(let i=0;i<hoops.length;i++){
+      const h=hoops[i];
+      for(const rx of[h.x-h.w/2,h.x+h.w/2]){
+        const dx=ball.x-rx,dy=ball.y-h.y,d=Math.hypot(dx,dy),mn=BR+4;
+        if(d<mn&&d>1e-6){const nx=dx/d,ny=dy/d;ball.x=rx+nx*mn;ball.y=h.y+ny*mn;const vn=ball.vx*nx+ball.vy*ny;if(vn<0){ball.vx-=1.55*vn*nx;ball.vy-=1.55*vn*ny;touched=true;beep(260,.05)}}
+      }
+      if(ball.vy>0&&py<h.y&&ball.y>=h.y&&Math.abs(ball.x-h.x)<h.w/2-3){capture(i);return}
+    }
+  }
+  ball.rot+=ball.vx*dt*.03;
+  if(ball.y-cam>H+60)over();
+}
+function hoop(h,front){
+  const sy=h.y-cam;
+  if(!front){
+    x.strokeStyle='rgba(255,255,255,.8)';x.lineWidth=1.5;
+    for(let k=0;k<=6;k++){x.beginPath();x.moveTo(h.x-h.w/2+k*h.w/6,sy);x.lineTo(h.x-h.w/3+k*h.w*2/18,sy+44);x.stroke()}
+    for(let r=1;r<4;r++){const yy=sy+r*11,half=h.w/2-r*4;x.beginPath();x.moveTo(h.x-half,yy);x.lineTo(h.x+half,yy);x.stroke()}
+  }else{
+    x.strokeStyle='#ff7a1a';x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(h.x-h.w/2,sy);x.lineTo(h.x+h.w/2,sy);x.stroke();
+    x.fillStyle='#ff5a00';[h.x-h.w/2,h.x+h.w/2].forEach(rx=>{x.beginPath();x.arc(rx,sy,5,0,7);x.fill()});
+  }
+}
+function draw(t){
+  const g=x.createLinearGradient(0,0,0,H);const lvl=Math.min(1,score/40);
+  g.addColorStop(0,'rgb('+(60-lvl*40|0)+','+(120-lvl*80|0)+','+(200-lvl*100|0)+')');g.addColorStop(1,'rgb('+(150-lvl*60|0)+','+(200-lvl*100|0)+',255)');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.fillStyle='rgba(255,255,255,.12)';for(let i=0;i<6;i++){const y=((i*130+cam*.2)%(H+60)+H+60)%(H+60)-30;x.fillRect(0,y,W,2)}
+  x.fillStyle='rgba(255,255,255,.35)';x.font='bold 120px sans-serif';x.textAlign='center';x.textBaseline='middle';x.globalAlpha=.18;x.fillText(score,W/2,H/2-40);x.globalAlpha=1;
+  hoops.forEach(h=>{if(h.y-cam>-60&&h.y-cam<H+80)hoop(h,false)});
+  if(aim&&st==='hold'){
+    const vx=(aim.sx-aim.cx)*5.5,vy=(aim.sy-aim.cy)*5.5,sp=Math.hypot(vx,vy),k=sp>1250?1250/sp:1;
+    const vx2=vx*k,vy2=vy*k;x.fillStyle='rgba(255,255,255,.9)';
+    for(let i=1;i<=14;i++){const tt=i*.055;const px=ball.x+vx2*tt,py=ball.y-cam+vy2*tt+.5*G*tt*tt;x.globalAlpha=1-i/16;x.beginPath();x.arc(px,py,3.2,0,7);x.fill()}
+    x.globalAlpha=1;
+  }
+  if(ball){x.save();x.translate(ball.x,ball.y-cam);x.rotate(ball.rot);x.fillStyle='#ff8a1f';x.beginPath();x.arc(0,0,BR,0,7);x.fill();x.strokeStyle='#7a3300';x.lineWidth=1.8;x.stroke();
+    x.beginPath();x.moveTo(-BR,0);x.lineTo(BR,0);x.moveTo(0,-BR);x.lineTo(0,BR);x.stroke();x.beginPath();x.arc(-BR*1.1,0,BR*.75,-1,1);x.stroke();x.beginPath();x.arc(BR*1.1,0,BR*.75,Math.PI-1,Math.PI+1);x.stroke();x.restore()}
+  hoops.forEach(h=>{if(h.y-cam>-60&&h.y-cam<H+80)hoop(h,true)});
+  parts.forEach(p=>{x.globalAlpha=Math.max(0,p.l*2);x.fillStyle=p.c;x.fillRect(p.x,p.y-cam,4,4)});x.globalAlpha=1;
+  if(msgT>0){x.globalAlpha=Math.min(1,msgT);x.fillStyle='#fff';x.strokeStyle='#0006';x.lineWidth=4;x.font='bold 24px sans-serif';x.strokeText(msg,W/2,150);x.fillText(msg,W/2,150);x.globalAlpha=1}
+}
+function loop(t){
+  const dt=Math.min(.033,(t-last)/1000||0);last=t;msgT=Math.max(0,msgT-dt);
+  parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=600*dt;p.l-=dt});parts=parts.filter(p=>p.l>0);
+  if(st==='hold'||st==='fly')update(dt);
+  draw(t);requestAnimationFrame(loop);
+}
+const pos=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}};
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(st!=='hold')return;cv.setPointerCapture(e.pointerId);const p=pos(e);aim={sx:p.x,sy:p.y,cx:p.x,cy:p.y}});
+cv.addEventListener('pointermove',e=>{if(!aim)return;const p=pos(e);aim.cx=p.x;aim.cy=p.y});
+function release(){
+  if(!aim)return;const vx=(aim.sx-aim.cx)*5.5,vy=(aim.sy-aim.cy)*5.5,sp=Math.hypot(vx,vy);aim=null;
+  if(sp<140||st!=='hold')return;const k=sp>1250?1250/sp:1;ball.vx=vx*k;ball.vy=vy*k;st='fly';touched=false;beep(420,.08);
+}
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,release));
+$('go').onclick=start;
+start();st='idle';$('ov').style.display='flex';
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

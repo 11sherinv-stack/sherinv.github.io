@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cup Game</title>
+<style>
+:root{--bg:#f4ecdc;--ink:#3a2a14;--muted:#7d6a4e;--card:#fff;--line:rgba(120,90,40,.28);--btn:#d9822b;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1610;--ink:#f3e8d2;--muted:#b9a584;--card:#2a2118;--line:rgba(240,200,140,.25);--btn:#ffa245;--btnink:#2b1500}}
+:root[data-theme="dark"]{--bg:#1c1610;--ink:#f3e8d2;--muted:#b9a584;--card:#2a2118;--line:rgba(240,200,140,.25);--btn:#ffa245;--btnink:#2b1500}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.hud{display:flex;gap:8px;margin:6px 0}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 14px;text-align:center;font-size:.72rem;color:var(--muted)}
+.hud b{display:block;font-size:1.1rem;color:var(--ink)}
+#stt{min-height:2.2em;font-weight:800;margin:8px 0;text-align:center;font-size:1.05rem}
+#tbl{position:relative;width:min(96vw,460px);height:230px;border-radius:18px;background:linear-gradient(#8b5a2b,#6d4420);box-shadow:inset 0 -10px 20px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.3);direction:ltr}
+.cw{position:absolute;bottom:34px;width:76px;height:96px;transition:left var(--sp,.45s) ease-in-out;cursor:pointer}
+.ball{position:absolute;left:50%;bottom:2px;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a80,#d32f2f);box-shadow:0 3px 4px rgba(0,0,0,.4);opacity:0;transition:opacity .2s}
+.cw.show .ball{opacity:1}
+.cp{position:absolute;inset:0;background:linear-gradient(90deg,#e9c46a,#f6dd8f 40%,#caa03d);clip-path:polygon(14% 0,86% 0,100% 100%,0 100%);transition:transform .35s;border-radius:6px}
+.cp::after{content:"";position:absolute;left:12%;right:12%;top:12px;height:8px;background:rgba(0,0,0,.18);border-radius:4px}
+.cw.up .cp{transform:translateY(-70px)}
+.cw.sel .cp{filter:brightness(1.15)}
+.ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(20,12,4,.88);color:#fff;text-align:center;padding:16px;z-index:9}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.76rem;margin-top:12px;text-align:center;max-width:440px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🥤 Cup Game (گل یا پوچ)</h1>
+<div class="row">
+  <select id="md" aria-label="حالت"><option value="1">تک‌نفره (بُر خوردن لیوان‌ها)</option><option value="2">دو نفره (پنهان‌کن و حدس بزن)</option></select>
+  <button class="b pr" id="nw">بازی جدید</button>
+</div>
+<div class="hud"><div id="l1">مرحله<b id="v1">۱</b></div><div id="l2">جان<b id="v2">❤️❤️❤️</b></div><div id="l3">رکورد<b id="v3">۰</b></div></div>
+<div id="stt"></div>
+<div id="tbl"></div>
+<div class="hint">توپ قرمز را زیر لیوانی پیدا کن. اول لیوان‌ها توپ را نشان می‌دهند، بعد سریع جابه‌جا می‌شوند. هر مرحله، لیوان‌ها سریع‌تر و بیشتر می‌شوند.</div>
+<div class="ov" id="ov"><h2 id="ot"></h2><p id="om" style="margin:0"></p><button class="b pr" id="ob">باشه</button></div>
+<script>
+const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]),tbl=$('tbl');
+let mode=1,n=3,cups=[],slots=[],ballCup=0,phase='idle',round=1,lives=3,best=0,sc=[0,0],turn=0,au,busy=false,hider=0;
+try{best=+localStorage.getItem('cup-best')||0}catch(e){}
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function slotX(i,k){const W=Math.min(window.innerWidth*.96,460),gap=(W-k*76)/(k+1);return gap+i*(76+gap)}
+function build(k){
+  n=k;tbl.innerHTML='';cups=[];slots=[];
+  for(let i=0;i<k;i++){const d=document.createElement('div');d.className='cw';d.innerHTML='<div class="ball"></div><div class="cp"></div>';d.style.left=slotX(i,k)+'px';d.dataset.i=i;tbl.appendChild(d);cups.push(d);slots.push(i)}
+}
+const place=()=>cups.forEach((c,i)=>c.style.left=slotX(slots[i],n)+'px');
+function lift(i,on){cups[i].classList.toggle('up',on);cups[i].classList.toggle('show',on&&i===ballCup)}
+async function shuffle(cnt,ms){
+  tbl.style.setProperty('--sp',ms+'ms');
+  for(let s=0;s<cnt;s++){
+    const a=Math.floor(Math.random()*n);let b;do{b=Math.floor(Math.random()*n)}while(b===a);
+    [slots[a],slots[b]]=[slots[b],slots[a]];place();beep(260+s*8,.05);await sleep(ms+40);
+  }
+}
+const hudUpd=()=>{$('v1').textContent=fa(round);$('v2').textContent=mode===1?'❤️'.repeat(Math.max(0,lives))||'—':fa(sc[0])+' - '+fa(sc[1]);$('v3').textContent=fa(best)};
+async function playRound(){
+  busy=true;phase='show';hudUpd();
+  const k=round<4?3:round<8?4:5;build(k);ballCup=Math.floor(Math.random()*k);
+  $('stt').textContent='توپ را ببین… 👀';await sleep(500);
+  lift(ballCup,true);await sleep(1100);lift(ballCup,false);await sleep(500);
+  $('stt').textContent='جابه‌جا می‌شوند…';
+  await shuffle(5+round*2,Math.max(180,520-round*40));
+  phase='pick';busy=false;$('stt').textContent='توپ زیر کدام لیوان است؟ 🤔';
+}
+async function reveal(i){
+  busy=true;phase='reveal';lift(i,true);await sleep(600);
+  const ok=i===ballCup;
+  if(!ok){lift(i,false);lift(ballCup,true)}
+  if(ok){round++;if(round-1>best){best=round-1;try{localStorage.setItem('cup-best',best)}catch(e){}}$('stt').textContent='🎉 گل! درست پیدا کردی';beep(900,.25)}
+  else{lives--;$('stt').textContent='😅 پوچ! توپ اینجا بود';beep(160,.3)}
+  hudUpd();await sleep(1500);
+  if(lives<=0){end();return}
+  playRound();
+}
+function end(){busy=false;phase='idle';$('ot').textContent='بازی تمام شد';$('om').textContent='مرحله‌ی تو: '+fa(round)+' · رکورد: '+fa(best);$('ob').onclick=()=>{$('ov').style.display='none';newGame()};$('ob').textContent='دوباره';$('ov').style.display='flex'}
+// ---- 2-player: one hides, the other guesses
+async function round2(){
+  busy=true;phase='hide';build(3);hudUpd();
+  const P=hider===0?'بازیکن ۱':'بازیکن ۲',G=hider===0?'بازیکن ۲':'بازیکن ۱';
+  $('stt').textContent=P+': یک لیوان را برای پنهان کردن توپ انتخاب کن ('+G+' نگاه نکند!)';busy=false;
+}
+function hideSel(i){
+  ballCup=i;phase='pass';busy=true;lift(i,true);setTimeout(()=>{lift(i,false);const G=hider===0?'بازیکن ۲':'بازیکن ۱';$('ot').textContent='دستگاه را به '+G+' بده 📱';$('om').textContent='توپ پنهان شد. حالا حدس بزن!';$('ob').textContent='آماده‌ام';$('ob').onclick=async()=>{$('ov').style.display='none';await shuffle(6,300);phase='pick';busy=false;$('stt').textContent=G+': توپ زیر کدام لیوان است؟'};$('ov').style.display='flex'},600);
+}
+async function reveal2(i){
+  busy=true;phase='reveal';lift(i,true);await sleep(600);const ok=i===ballCup;if(!ok){lift(i,false);lift(ballCup,true)}
+  const guesser=1-hider;if(ok){sc[guesser]++;beep(900,.2);$('stt').textContent='🎉 گل! '+(guesser===0?'بازیکن ۱':'بازیکن ۲')+' درست حدس زد'}else{sc[hider]++;beep(160,.3);$('stt').textContent='😅 پوچ! '+(hider===0?'بازیکن ۱':'بازیکن ۲')+' امتیاز گرفت'}
+  hudUpd();await sleep(1700);
+  if(sc[0]>=5||sc[1]>=5){busy=false;phase='idle';$('ot').textContent='🏆 '+(sc[0]>=5?'بازیکن ۱':'بازیکن ۲')+' برنده شد';$('om').textContent=fa(sc[0])+' - '+fa(sc[1]);$('ob').textContent='دوباره';$('ob').onclick=()=>{$('ov').style.display='none';newGame()};$('ov').style.display='flex';return}
+  hider=1-hider;round2();
+}
+tbl.addEventListener('click',e=>{
+  const c=e.target.closest('.cw');if(!c||busy)return;const i=+c.dataset.i;
+  if(mode===1&&phase==='pick')reveal(i);
+  else if(mode===2&&phase==='hide')hideSel(i);
+  else if(mode===2&&phase==='pick')reveal2(i);
+});
+function newGame(){
+  mode=+$('md').value;round=1;lives=3;sc=[0,0];hider=0;busy=false;
+  $('l1').firstChild.textContent=mode===1?'مرحله':'دور';$('l2').firstChild.textContent=mode===1?'جان':'امتیاز (تا ۵)';
+  hudUpd();mode===1?playRound():round2();
+}
+$('nw').onclick=newGame;$('md').onchange=newGame;
+addEventListener('resize',()=>{if(cups.length)place()});
+newGame();
+</script>
+</body>
+</html>
