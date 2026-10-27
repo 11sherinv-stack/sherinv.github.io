@@ -115,6 +115,21 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 #nbody{min-height:46vh;resize:vertical;line-height:1.9}
 .cdot{width:30px;height:30px;border-radius:50%;border:2px solid rgba(0,0,0,.25);margin:4px;cursor:pointer;padding:0}.cdot.on{outline:3px solid #26301a;outline-offset:1px}
 #nsearch{margin:8px 0;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit}
+.cexpr{font-size:1.9rem;direction:ltr;text-align:right;min-height:2.4rem;word-break:break-all;font-weight:700}
+.cres{direction:ltr;text-align:right;color:var(--muted);min-height:1.5rem;font-size:1.1rem}
+.ckeys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;direction:ltr;margin-top:8px}
+.ckeys button{height:54px;border-radius:14px;border:1px solid var(--line);background:var(--field);color:var(--ink);font:inherit;font-size:1.25rem;font-weight:700;cursor:pointer}
+.ckeys .op{background:var(--tq);color:#fff;border:0}.ckeys .eq{grid-column:span 4;background:var(--lime);color:#2f3d10;border:0}.ckeys button:active{filter:brightness(1.2)}
+.hi{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer;direction:ltr}
+.ptools,.pcols,.prow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;align-items:center;justify-content:center}
+.ptools button{width:44px;height:40px;font-size:1.2rem;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--ink);cursor:pointer}.ptools button.on{outline:3px solid var(--tq)}
+.sw2{width:26px;height:26px;border-radius:50%;border:2px solid rgba(0,0,0,.3);cursor:pointer;padding:0}
+#pcv{width:100%;aspect-ratio:480/560;background:#fff;border-radius:10px;touch-action:none;border:1px solid var(--line);cursor:crosshair;display:block}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.cw2{text-align:center;font-weight:700;color:var(--muted);font-size:.8rem;padding:4px 0}
+.cd2{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative}
+.cd2 b{font-size:1rem}.cd2 small{font-size:.6rem;color:var(--muted)}.cd2.red b{color:#e53935}.cd2.today{background:var(--lime);color:#2f3d10}.cd2.today small{color:#2f3d10}.cd2.sel{outline:3px solid var(--tq)}
+.cd2.ev::after{content:"";position:absolute;bottom:4px;width:6px;height:6px;border-radius:50%;background:var(--tq)}
 .saver *{animation:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -162,7 +177,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 <section id="apps" hidden>
   <h2>Apps</h2>
   <div id="apps-home"><p class="sub">برنامه‌های کاربردی S loop</p>
-    <div class="appgrid"><button class="app" id="app-notes"><span>📝</span><b>Notes</b><small>یادداشت</small></button><div class="app soon"><span>➕</span><b>به‌زودی</b><small>برنامه‌های بیشتر</small></div></div>
+    <div class="appgrid"><button class="app" id="app-notes"><span>📝</span><b>Notes</b><small>یادداشت</small></button><button class="app" id="app-calc"><span>🧮</span><b>Calculator</b><small>ماشین حساب</small></button><button class="app" id="app-paint"><span>🎨</span><b>Paint</b><small>نقاشی</small></button><button class="app" id="app-cal"><span>📅</span><b>Calendar</b><small>تقویم</small></button><div class="app soon"><span>➕</span><b>به‌زودی</b><small>برنامه‌های بیشتر</small></div></div>
   </div>
   <div id="notes-app" hidden>
     <div id="nlist-wrap">
@@ -179,6 +194,27 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
         <p class="sub" style="font-size:.72rem;margin:6px 0 0;color:#444">خودکار ذخیره می‌شود (فقط روی همین دستگاه).</p>
       </div>
     </div>
+  </div>
+
+  <div id="calc-app" hidden>
+    <div class="sr"><button class="al" data-back="1">← Apps</button><b>🧮 ماشین حساب</b><span></span></div>
+    <div class="box"><div id="cexpr" class="cexpr">۰</div><div id="cres" class="cres"></div><div id="ckeys" class="ckeys"></div></div>
+    <div class="box"><div class="sr"><b>تاریخچه</b><button class="al" id="chclr">پاک</button></div><div id="chist"></div></div>
+  </div>
+  <div id="paint-app" hidden>
+    <div class="sr"><button class="al" data-back="1">← Apps</button><b>🎨 Paint</b><span></span></div>
+    <div class="box" style="padding:10px">
+      <div class="ptools" id="ptools"><button data-t="pen" class="on" aria-label="قلم">✏️</button><button data-t="eraser" aria-label="پاک‌کن">🧽</button><button data-t="line" aria-label="خط">📏</button><button data-t="rect" aria-label="مستطیل">▭</button><button data-t="circle" aria-label="بیضی">◯</button><button data-t="fill" aria-label="سطل رنگ">🪣</button></div>
+      <div class="pcols" id="pcols"></div>
+      <div class="prow"><input type="color" id="pcol" value="#222222" aria-label="رنگ دلخواه"><label>ضخامت <input type="range" id="psz" min="1" max="40" value="6"></label></div>
+      <canvas id="pcv" width="480" height="560"></canvas>
+      <div class="prow"><button class="al" id="pund" aria-label="برگشت">↶</button><button class="al" id="pred" aria-label="جلو">↷</button><button class="al" id="pclr">🗑 پاک‌کردن</button><button class="pr" id="psave">💾 ذخیره PNG</button></div>
+    </div>
+  </div>
+  <div id="cal-app" hidden>
+    <div class="sr"><button class="al" data-back="1">← Apps</button><b>📅 تقویم</b><button class="al" id="caltoday">امروز</button></div>
+    <div class="box"><div class="sr"><button class="al" id="calprev" aria-label="ماه قبل">▶</button><div style="text-align:center"><b id="caltitle"></b><div class="sub" id="calsub" style="margin:0;font-size:.74rem"></div></div><button class="al" id="calnext" aria-label="ماه بعد">◀</button></div><div class="calg" id="calgrid"></div></div>
+    <div class="box" id="caldet"></div>
   </div>
 </section>
 
@@ -223,7 +259,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 </main>
 <div id="sfw"><div class="sbub" id="sbub" role="button" tabindex="0">چه کمکی از دستم بر می‌آید؟<button id="sbx" aria-label="Close">×</button></div><button id="sfab" aria-label="Support" title="Support">🎧</button></div>
 <div id="spop" hidden><div class="sph"><b>🎧 پشتیبانی S loop</b><button id="spx" aria-label="Close">×</button></div><div class="smsgs" id="sm"></div><div class="schips" id="sc"></div><div class="aiin"><input type="text" id="si" placeholder="چه کمکی از دستم بر می‌آید؟" autocomplete="off" aria-label="پیام پشتیبانی"><button class="pr" id="ss">ارسال</button></div></div>
-<div id="toast"></div><noscript><ul><li><a href="snake.html">Snake Advanced</a></li><li><a href="arena.html">Arena Battle</a></li><li><a href="2048.html">2048</a></li><li><a href="tetris.html">Tetris</a></li><li><a href="dino.html">Dino Run</a></li><li><a href="flappy.html">Flappy Bird Advanced</a></li><li><a href="maze.html">Maze</a></li><li><a href="sudoku.html">Sudoku</a></li><li><a href="candy.html">Candy Match</a></li><li><a href="breakout.html">Breakout</a></li><li><a href="tictactoe.html">Tic Tac Toe</a></li><li><a href="chess.html">Chess</a></li><li><a href="memory.html">Memory Cards</a></li><li><a href="ludo.html">Ludo</a></li><li><a href="snakeladder.html">Snakes &amp; Ladders</a></li><li><a href="uno.html">UNO</a></li><li><a href="airhockey.html">Air Hockey</a></li><li><a href="skyraid.html">Sky Raid</a></li><li><a href="happybird.html">Happy Bird</a></li><li><a href="seabattle.html">Sea Battle</a></li><li><a href="riverjet.html">River Jet</a></li><li><a href="truthdare.html">Truth or Dare</a></li><li><a href="solitaire.html">Solitaire</a></li><li><a href="raiders.html">Clan Raiders</a></li><li><a href="pinball.html">Pinball</a></li><li><a href="rps.html">Rock Paper Scissors</a></li><li><a href="pixelhero.html">Pixel Hero</a></li><li><a href="watersort.html">Water Sort</a></li><li><a href="rubik.html">Rubik Cube</a></li><li><a href="connect4.html">Connect 4</a></li><li><a href="hoopshot.html">Hoop Shot</a></li><li><a href="knifethrow.html">Knife Throw</a></li><li><a href="checkers.html">Checkers</a></li><li><a href="soccerpool.html">Soccer Pool</a></li><li><a href="cupgame.html">Cup Game</a></li></ul></noscript>
+<div id="toast"></div><noscript><ul><li><a href="snake.html">Snake Advanced</a></li><li><a href="arena.html">Arena Battle</a></li><li><a href="2048.html">2048</a></li><li><a href="tetris.html">Tetris</a></li><li><a href="dino.html">Dino Run</a></li><li><a href="flappy.html">Flappy Bird Advanced</a></li><li><a href="maze.html">Maze</a></li><li><a href="sudoku.html">Sudoku</a></li><li><a href="candy.html">Candy Match</a></li><li><a href="breakout.html">Breakout</a></li><li><a href="tictactoe.html">Tic Tac Toe</a></li><li><a href="chess.html">Chess</a></li><li><a href="memory.html">Memory Cards</a></li><li><a href="ludo.html">Ludo</a></li><li><a href="snakeladder.html">Snakes &amp; Ladders</a></li><li><a href="uno.html">UNO</a></li><li><a href="airhockey.html">Air Hockey</a></li><li><a href="skyraid.html">Sky Raid</a></li><li><a href="happybird.html">Happy Bird</a></li><li><a href="seabattle.html">Sea Battle</a></li><li><a href="riverjet.html">River Jet</a></li><li><a href="truthdare.html">Truth or Dare</a></li><li><a href="solitaire.html">Solitaire</a></li><li><a href="raiders.html">Clan Raiders</a></li><li><a href="pinball.html">Pinball</a></li><li><a href="rps.html">Rock Paper Scissors</a></li><li><a href="pixelhero.html">Pixel Hero</a></li><li><a href="watersort.html">Water Sort</a></li><li><a href="rubik.html">Rubik Cube</a></li><li><a href="connect4.html">Connect 4</a></li><li><a href="hoopshot.html">Hoop Shot</a></li><li><a href="knifethrow.html">Knife Throw</a></li><li><a href="checkers.html">Checkers</a></li><li><a href="soccerpool.html">Soccer Pool</a></li><li><a href="cupgame.html">Cup Game</a></li><li><a href="arrowpuzzle.html">Arrow Puzzle</a></li><li><a href="mathquest.html">Math Quest</a></li><li><a href="eightball.html">8 Ball</a></li></ul></noscript>
 <script>
 const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -266,6 +302,9 @@ const GM=[
 {id:'checkers',n:'Checkers',u:'checkers.html',a:[0,1,2,3].map(r=>[0,1,2,3].map(c=>`<rect x="${c*25}" y="${r*25}" width="25" height="25" fill="${(r+c)%2?'#b58863':'#f0d9b5'}"/>`).join('')).join('')+[[0,1,'#222'],[0,3,'#222'],[3,0,'#d32f2f'],[3,2,'#d32f2f'],[2,1,'#d32f2f']].map(([r,c,f])=>`<circle cx="${c*25+12.5}" cy="${r*25+12.5}" r="9.5" fill="${f}" stroke="#000" stroke-width="1.5"/>`).join('')+T(37.5,57,'👑',12,'#ffd23f')},
 {id:'soccerpool',n:'Soccer Pool',u:'soccerpool.html',a:'<rect width="100" height="100" fill="#2f8f3f"/><rect x="8" y="8" width="84" height="84" fill="none" stroke="#fff" stroke-width="2"/><path d="M8 50H92" stroke="#fff" stroke-width="2"/><circle cx="50" cy="50" r="12" fill="none" stroke="#fff" stroke-width="2"/><rect x="38" y="2" width="24" height="7" fill="none" stroke="#fff" stroke-width="2"/><rect x="38" y="91" width="24" height="7" fill="none" stroke="#fff" stroke-width="2"/><circle cx="32" cy="72" r="8" fill="#1e88e5" stroke="#fff" stroke-width="1.5"/><circle cx="66" cy="30" r="8" fill="#e53935" stroke="#fff" stroke-width="1.5"/><circle cx="53" cy="53" r="4.5" fill="#fff" stroke="#222"/>'},
 {id:'cupgame',n:'Cup Game',u:'cupgame.html',a:'<rect width="100" height="100" fill="#8b5a2b"/><rect y="74" width="100" height="26" fill="#6d4420"/><circle cx="50" cy="68" r="5.5" fill="#d32f2f" stroke="#7a0f0a"/>'+[[14,0],[38,-22],[62,0]].map(([x0,dy])=>`<polygon points="${x0+4},${34+dy} ${x0+18},${34+dy} ${x0+22},${68+dy} ${x0},${68+dy}" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>`).join('')},
+{id:'arrowpuzzle',n:'Arrow Puzzle',u:'arrowpuzzle.html',a:'<rect width="100" height="100" fill="#eef2f7"/><g stroke-linecap="round" stroke-width="9"><path d="M16 28H50" stroke="#e8523f"/><path d="M28 82V50" stroke="#2e9e5b"/><path d="M84 64H56" stroke="#2d6cdf"/><path d="M70 22V40" stroke="#8e44ad"/></g><polygon points="50,20 64,28 50,36" fill="#e8523f"/><polygon points="20,50 28,36 36,50" fill="#2e9e5b"/><polygon points="56,56 42,64 56,72" fill="#2d6cdf"/><polygon points="62,40 70,54 78,40" fill="#8e44ad"/>'},
+{id:'mathquest',n:'Math Quest',u:'mathquest.html',a:'<rect width="100" height="100" fill="#13213a"/>'+T(50,38,'2x+3=11',16,'#fff')+T(50,64,'x = ?',20,'#ffd23f')+T(78,20,'✓',16,'#5fdc90')+T(22,84,'x²',14,'#6aa0ff')},
+{id:'eightball',n:'8 Ball',u:'eightball.html',a:'<rect width="100" height="100" fill="#0f7a4a"/><circle cx="96" cy="6" r="13" fill="#050505"/><circle cx="30" cy="70" r="12" fill="#f8f8f2" stroke="#999"/><circle cx="62" cy="42" r="14" fill="#111"/><circle cx="62" cy="42" r="6.5" fill="#fff"/>'+T(62,43,'8',9,'#111')+'<circle cx="76" cy="74" r="9" fill="#f4c20d" stroke="#fff" stroke-width="1.5"/><path d="M6 94L22 82" stroke="#e8c88a" stroke-width="3" stroke-linecap="round"/>'},
 {id:'memory',n:'Memory Cards',u:'memory.html',a:'<rect width="100" height="100" fill="#e4edb9"/><rect x="10" y="10" width="38" height="38" rx="6" fill="#fff"/><rect x="52" y="10" width="38" height="38" rx="6" fill="#14a89b"/><rect x="10" y="52" width="38" height="38" rx="6" fill="#14a89b"/><rect x="52" y="52" width="38" height="38" rx="6" fill="#fff"/>'+T(29,38,'🐼',22,'#000')+T(71,38,'?',22,'#fff')+T(29,80,'?',22,'#fff')+T(71,80,'🐼',22,'#000')}
 ];
 let fav=LS.get('sl-fav',[]);
@@ -481,6 +520,12 @@ AI.CAP={'ایران':'تهران','فرانسه':'پاریس','آلمان':'بر
 AI.JOKES=['معلم: ۵ تا سیب داری، ۳ تا را به علی بدهی چند تا می‌ماند؟ شاگرد: ۵ تا! معلم: چرا؟ شاگرد: چون من سیبم را به کسی نمی‌دهم! 😄','چرا برنامه‌نویس‌ها از طبیعت می‌ترسند؟ چون پر از باگ است 🐛','به کامپیوتر گفتم برو استراحت کن. گفت: من که همیشه Sleep هستم، تو بخواب! 😴','یک ریاضی‌دان به رستوران رفت و گفت: یک پیتزا بدهید، ولی آن را به ۸ تکه تقسیم نکنید؛ من نمی‌توانم بیشتر از ۴ تکه بخورم! 🍕','ماهی به ماهی گفت: امروز آب‌وهوا چطور است؟ آن یکی گفت: خیس! 🐟','چرا مداد گریه کرد؟ چون سرش را تراشیدند! ✏️'];
 AI.FACTS=['🌍 زمین ۷۱٪ آب است، ولی کمتر از ۳٪ آن شیرین است.','🐙 هشت‌پا سه قلب دارد.','⚡ رعد و برق چند برابر داغ‌تر از سطح خورشید است.','🍯 عسل هرگز خراب نمی‌شود.','🧠 مغز انسان حدود ۲۰٪ انرژی بدن را مصرف می‌کند.','🐜 مورچه‌ها می‌توانند ۵۰ برابر وزن خودشان را بلند کنند.'];
 AI.KB=[
+{k:['ماشین حساب','کالکولاتور','calculator'],a:'در Apps برنامه‌ی Calculator هست: عدد و عملگر را بزن (+ − × ÷ ^ √ % پرانتز π)، با = جواب را بگیر و از تاریخچه دوباره استفاده کن. در همین چت هم می‌توانی مستقیم بنویسی «۲۵×۴+۱۰».'},
+{k:['نقاشی','paint','پینت'],a:'در Apps برنامه‌ی Paint هست: قلم، پاک‌کن، خط، مستطیل، بیضی و سطل رنگ، با ۱۲ رنگ و رنگ دلخواه، برگشت/جلو و ذخیره به‌صورت PNG.'},
+{k:['تقویم','calendar','شمسی'],a:'در Apps برنامه‌ی Calendar هست: تقویم شمسی با تاریخ میلادی زیر هر روز، تعطیلات ثابت (قمری‌ها نشان داده نمی‌شوند) و امکان نوشتن رویداد برای هر روز.'},
+{k:['arrow','پیکان'],g:['arrowpuzzle'],a:'➡️ روی پیکان بزن تا در جهت سرش از صفحه خارج شود. فقط اگر مسیرش خالی باشد خارج می‌شود؛ وگرنه یک جان از دست می‌دهی. همه‌ی پیکان‌ها را خارج کن.'},
+{k:['math quest','حل معادله','معادله ریاضی','معادلات'],g:['mathquest'],a:'🧮 معادله‌های ریاضی (ساده، خطی، دوطرفه و درجه ۲) را حل کن. جواب را با صفحه‌کلید بنویس؛ هرچه سریع‌تر، امتیاز بیشتر. سه جان داری.'},
+{k:['بیلیارد','8 ball','eight ball','پول'],g:['eightball'],a:'🎱 انگشتت را بکش و رها کن تا توپ سفید ضربه بخورد. اول گروهت (تکی ۱–۷ یا راه‌راه ۹–۱۵) با اولین توپ افتاده مشخص می‌شود؛ بعد همه‌ی توپ‌های گروهت و آخر توپ ۸ را بزن. خطا (نخوردن به توپ، افتادن سفید، زدن اول توپ اشتباه) یعنی «توپ در دست» برای حریف.'},
 {k:['یادداشت','نوت','notes','اپلیکیشن','برنامه ها','apps'],a:'در بخش Apps برنامه‌ی Notes (یادداشت) هست: یادداشت جدید بساز، رنگ و پین انتخاب کن، جستجو کن و کپی بگیر. همه‌چیز خودکار و فقط روی همین دستگاه ذخیره می‌شود.'},
 {k:['چکرز','checkers'],g:['checkers'],a:'مهره‌ها فقط روی خانه‌های تیره مورب حرکت می‌کنند. گرفتن مهره‌ی حریف (پریدن از رویش) اجباری است و می‌تواند زنجیره‌ای باشد. مهره‌ای که به آخر زمین حریف برسد شاه 👑 می‌شود و در هر دو جهت حرکت می‌کند.'},
 {k:['hoop','هوپ','دانک','بسکتبال'],g:['hoopshot'],a:'🏀 انگشتت را به عقب بکش و رها کن تا توپ به سمت حلقه‌ی بالاتر پرتاب شود. اگر به لبه‌ی حلقه نخورد، امتیاز Perfect می‌گیری و با پشت‌سرهم‌شدن، امتیازها بیشتر می‌شود.'},
@@ -528,7 +573,7 @@ AI.KB=[
 {k:['عدد پی','عدد π'],a:'تقریباً ۳٫۱۴۱۵۹'},{k:['چند روز سال','روز در سال'],a:'۳۶۵ روز (در سال کبیسه ۳۶۶ روز).'},{k:['چند ثانیه در ساعت','ثانیه در ساعت'],a:'۳۶۰۰ ثانیه.'}
 ];
 AI.KB.forEach(e=>{e.k=e.k.map(AI.norm)});
-AI.TAG={two:['checkers','soccerpool','cupgame','chess','tictactoe','connect4','airhockey','ludo','snakeladder','rps','memory','truthdare'],relax:['watersort','memory','sudoku','maze','solitaire','candy','g2048'],puzzle:['sudoku','g2048','watersort','rubik','maze','chess','connect4','candy','memory','solitaire','tetris'],action:['hoopshot','knifethrow','skyraid','riverjet','pixelhero','dino','flappy','happybird','airhockey','pinball','breakout','snake','arena','raiders'],strat:['checkers','chess','raiders','arena','seabattle','connect4','ludo'],card:['uno','solitaire']};
+AI.TAG={two:['eightball','checkers','soccerpool','cupgame','chess','tictactoe','connect4','airhockey','ludo','snakeladder','rps','memory','truthdare'],relax:['watersort','memory','sudoku','maze','solitaire','candy','g2048'],puzzle:['arrowpuzzle','mathquest','sudoku','g2048','watersort','rubik','maze','chess','connect4','candy','memory','solitaire','tetris'],action:['hoopshot','knifethrow','skyraid','riverjet','pixelhero','dino','flappy','happybird','airhockey','pinball','breakout','snake','arena','raiders'],strat:['eightball','checkers','chess','raiders','arena','seabattle','connect4','ludo'],card:['uno','solitaire']};
 AI.games=n=>{
   if(!/بازی|game/.test(n)||!/پیشنهاد|چی\s*بازی|چه\s*بازی|معرفی|کدوم|کدام|دو\s*نفره|دونفره|آرام|ریلکس|فکری|ذهنی|اکشن|هیجان|استراتژی|کارتی/.test(n))return null;
   let key=null,label='';
@@ -616,7 +661,9 @@ supRender();
 let notes=LS.get('sl-notes',[]),nCur=null,nQ='',nDelT=0,nTm;
 const NC=['#fff7a8','#ffd1e8','#c9f2e3','#cfe3ff','#e6d6ff'];
 const nSave=()=>LS.set('sl-notes',notes);
-function appsHome(){$('apps-home').hidden=false;$('notes-app').hidden=true}
+const APPS=['notes-app','calc-app','paint-app','cal-app'];
+function appsHome(){$('apps-home').hidden=false;APPS.forEach(i=>{$(i).hidden=true})}
+function openApp(id){$('apps-home').hidden=true;APPS.forEach(i=>{$(i).hidden=i!==id})}
 function nList(){
   nCur=null;$('nedit').hidden=true;$('nlist-wrap').hidden=false;
   const q=nQ.trim().toLowerCase(),L=notes.filter(n=>!q||(n.title+' '+n.body).toLowerCase().includes(q)).sort((a,b)=>((b.pin|0)-(a.pin|0))||(b.ts-a.ts));
@@ -645,6 +692,134 @@ $('ndel').onclick=()=>{
   notes=notes.filter(x=>x!==n);nSave();nDelT=0;$('ndel').textContent='🗑';nList();toast('یادداشت حذف شد');
 };
 $('menu').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.s==='apps')appsHome()});
+/* ---- shared pure helpers for Apps (calendar, paint fill, calculator) ---- */
+function j2g(jy,jm,jd){
+  jy+=1595;let days=-355668+(365*jy)+(Math.floor(jy/33)*8)+Math.floor(((jy%33)+3)/4)+jd+((jm<7)?(jm-1)*31:((jm-7)*30)+186);
+  let gy=400*Math.floor(days/146097);days%=146097;
+  if(days>36524){gy+=100*Math.floor(--days/36524);days%=36524;if(days>=365)days++}
+  gy+=4*Math.floor(days/1461);days%=1461;
+  if(days>365){gy+=Math.floor((days-1)/365);days=(days-1)%365}
+  let gd=days+1;const sal=[0,31,((gy%4===0&&gy%100!==0)||(gy%400===0))?29:28,31,30,31,30,31,31,30,31,30,31];let gm;
+  for(gm=0;gm<13&&gd>sal[gm];gm++)gd-=sal[gm];return[gy,gm,gd];
+}
+const jLeap=jy=>{const g=j2g(jy,12,30),j=AI.toJ(g[0],g[1],g[2]);return j[0]===jy&&j[1]===12&&j[2]===30};
+const jLen=(jy,jm)=>jm<=6?31:jm<=11?30:(jLeap(jy)?30:29);
+function floodFill(d,w,h,x0,y0,c){
+  const idx=(px,py)=>(py*w+px)*4,s=idx(x0,y0),tr=d[s],tg=d[s+1],tb=d[s+2];
+  if(Math.abs(tr-c[0])+Math.abs(tg-c[1])+Math.abs(tb-c[2])<12)return false;
+  const vis=new Uint8Array(w*h),match=(px,py)=>{const i=idx(px,py);return !vis[py*w+px]&&Math.abs(d[i]-tr)+Math.abs(d[i+1]-tg)+Math.abs(d[i+2]-tb)<70};
+  const st=[[x0,y0]];
+  while(st.length){
+    const[px,py]=st.pop();if(!match(px,py))continue;
+    let xl=px;while(xl>0&&match(xl-1,py))xl--;let xr=px;while(xr<w-1&&match(xr+1,py))xr++;
+    for(let xx=xl;xx<=xr;xx++){const i=idx(xx,py);d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;vis[py*w+xx]=1}
+    for(const yy of[py-1,py+1]){if(yy<0||yy>=h)continue;let span=false;for(let xx=xl;xx<=xr;xx++){const m=match(xx,yy);if(m&&!span){st.push([xx,yy]);span=true}else if(!m)span=false}}
+  }
+  return true;
+}
+
+/* ---- Apps: Calculator ---- */
+let cx='',cDone=false,cHist=LS.get('sl-calc',[]);
+const cN=s=>s.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/π/g,'pi').replace(/√/g,'sqrt');
+const cVal=s=>{const v=AI.evalExpr(cN(s),0);if(typeof v!=='number'||!isFinite(v))throw 0;return v};
+const cStr=v=>String(Math.round(v*1e8)/1e8);
+function cShow(){
+  $('cexpr').textContent=fa(cx||'0');let r='';
+  try{if(cx&&/[\d)πe%]$/.test(cx)&&/[+\-−×÷^√%(]/.test(cx.replace(/^−/,'')))r='= '+fa(cStr(cVal(cx)))}catch(e){}
+  $('cres').textContent=r;
+}
+function cHistR(){$('chist').innerHTML=cHist.length?cHist.map((h,i)=>'<div class="hi" data-h="'+i+'"><span>'+esc(fa(h.e))+'</span><b>= '+esc(fa(h.r))+'</b></div>').join(''):'<p class="sub" style="margin:6px 0 0">هنوز محاسبه‌ای نداری.</p>'}
+function cPress(k){
+  if(k==='C'){cx='';cDone=false}
+  else if(k==='⌫')cx=cx.slice(0,-1);
+  else if(k==='='){if(!cx)return;try{const r=cStr(cVal(cx));cHist.unshift({e:cx,r});cHist=cHist.slice(0,15);LS.set('sl-calc',cHist);cx=r;cDone=true;cHistR()}catch(e){toast('عبارت نامعتبر است')}}
+  else if(k==='±'){cx=cx.startsWith('−')?cx.slice(1):'−'+cx}
+  else{if(cDone&&/[\d.π(√]/.test(k))cx='';cDone=false;cx+=k}
+  cShow();
+}
+$('ckeys').innerHTML=['C','(',')','⌫','7','8','9','÷','4','5','6','×','1','2','3','−','0','.','%','+','±','π','√','^'].map(k=>'<button data-k="'+k+'"'+('÷×−+^'.includes(k)?' class="op"':'')+'>'+k+'</button>').join('')+'<button class="eq" data-k="=">=</button>';
+$('ckeys').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b)cPress(b.dataset.k)});
+$('chist').addEventListener('click',e=>{const h=e.target.closest('[data-h]');if(h){cx=cHist[+h.dataset.h].r;cDone=true;cShow()}});
+$('chclr').onclick=()=>{cHist=[];LS.set('sl-calc',cHist);cHistR()};
+addEventListener('keydown',e=>{
+  if($('apps').hidden||$('calc-app').hidden||/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;
+  const k=e.key,m={'*':'×','/':'÷','-':'−'};
+  if(/^[0-9.+()%^]$/.test(k))cPress(k);else if(m[k])cPress(m[k]);else if(k==='Enter'||k==='=')cPress('=');else if(k==='Backspace')cPress('⌫');else if(k==='Escape')cPress('C');
+});
+/* ---- Apps: Paint ---- */
+const pc=$('pcv'),px=pc.getContext('2d',{willReadFrequently:true});
+let pTool='pen',pCol='#222222',pSz=6,pDown=false,p0=null,pSnap=null,pU=[],pRe=[],pInit=false;
+const PCOL=['#222222','#e53935','#fb8c00','#fdd835','#43a047','#00acc1','#1e88e5','#8e44ad','#ec407a','#6d4c41','#9e9e9e','#ffffff'];
+const pPush=()=>{pU.push(px.getImageData(0,0,pc.width,pc.height));if(pU.length>25)pU.shift();pRe=[]};
+function pBlank(){px.fillStyle='#fff';px.fillRect(0,0,pc.width,pc.height);pU=[];pRe=[];pPush()}
+const pPos=e=>{const r=pc.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*pc.width,y:(e.clientY-r.top)/r.height*pc.height}};
+const hexRGB=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+function pStyle(){px.lineCap='round';px.lineJoin='round';px.lineWidth=pSz;px.strokeStyle=pTool==='eraser'?'#ffffff':pCol;px.fillStyle=pCol}
+pc.addEventListener('pointerdown',e=>{
+  e.preventDefault();const p=pPos(e);
+  if(pTool==='fill'){const img=px.getImageData(0,0,pc.width,pc.height);if(floodFill(img.data,pc.width,pc.height,Math.floor(p.x),Math.floor(p.y),hexRGB(pCol))){px.putImageData(img,0,0);pPush()}return}
+  try{pc.setPointerCapture(e.pointerId)}catch(err){}pDown=true;p0=p;pStyle();
+  if(pTool==='pen'||pTool==='eraser'){px.beginPath();px.moveTo(p.x,p.y);px.lineTo(p.x+.01,p.y);px.stroke()}else pSnap=px.getImageData(0,0,pc.width,pc.height);
+});
+pc.addEventListener('pointermove',e=>{
+  if(!pDown)return;const p=pPos(e);pStyle();
+  if(pTool==='pen'||pTool==='eraser'){px.lineTo(p.x,p.y);px.stroke()}
+  else{px.putImageData(pSnap,0,0);px.beginPath();
+    if(pTool==='line'){px.moveTo(p0.x,p0.y);px.lineTo(p.x,p.y)}
+    else if(pTool==='rect')px.rect(p0.x,p0.y,p.x-p0.x,p.y-p0.y);
+    else{const rx=(p.x-p0.x)/2,ry=(p.y-p0.y)/2;px.ellipse(p0.x+rx,p0.y+ry,Math.abs(rx),Math.abs(ry),0,0,7)}
+    px.stroke()}
+});
+['pointerup','pointercancel'].forEach(ev=>pc.addEventListener(ev,()=>{if(pDown){pDown=false;pPush()}}));
+$('ptools').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;pTool=b.dataset.t;$('ptools').querySelectorAll('button').forEach(x2=>x2.classList.toggle('on',x2===b))});
+$('pcols').innerHTML=PCOL.map(c=>'<button class="sw2" data-c="'+c+'" style="background:'+c+'" aria-label="'+c+'"></button>').join('');
+$('pcols').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(b){pCol=b.dataset.c;$('pcol').value=pCol;if(pTool==='eraser'){pTool='pen';$('ptools').querySelectorAll('button').forEach(x2=>x2.classList.toggle('on',x2.dataset.t==='pen'))}}});
+$('pcol').addEventListener('input',e=>{pCol=e.target.value});$('psz').addEventListener('input',e=>{pSz=+e.target.value});
+$('pund').onclick=()=>{if(pU.length>1){pRe.push(pU.pop());px.putImageData(pU[pU.length-1],0,0)}};
+$('pred').onclick=()=>{if(pRe.length){const s=pRe.pop();pU.push(s);px.putImageData(s,0,0)}};
+$('pclr').onclick=()=>{px.fillStyle='#fff';px.fillRect(0,0,pc.width,pc.height);pPush()};
+$('psave').onclick=()=>{pc.toBlob(b=>{if(!b){toast('ذخیره ممکن نشد');return}const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='paint.png';document.body.appendChild(a);a.click();a.remove();toast('ذخیره شد ✓')})};
+/* ---- Apps: Calendar (Jalali + Gregorian) ---- */
+const JMN=AI.J,CWD=['ش','ی','د','س','چ','پ','ج'];
+const HOL={'1-1':'نوروز','1-2':'نوروز','1-3':'نوروز','1-4':'نوروز','1-12':'روز جمهوری اسلامی','1-13':'سیزده‌بدر','3-14':'رحلت امام خمینی','3-15':'قیام ۱۵ خرداد','11-22':'پیروزی انقلاب اسلامی','12-29':'ملی شدن صنعت نفت'};
+let calY=1405,calM=1,calSel=null,calEv=LS.get('sl-cal',{});
+const calKey=d=>calY+'-'+calM+'-'+d;
+function calToday(){const t=new Date(),j=AI.toJ(t.getFullYear(),t.getMonth()+1,t.getDate());calY=j[0];calM=j[1];calSel=j[2];calRender()}
+function calRender(){
+  const first=j2g(calY,calM,1),dow=(new Date(first[0],first[1]-1,first[2]).getDay()+1)%7,len=jLen(calY,calM);
+  const t=new Date(),tj=AI.toJ(t.getFullYear(),t.getMonth()+1,t.getDate());
+  let h=CWD.map(w=>'<div class="cw2">'+w+'</div>').join('');
+  for(let i=0;i<dow;i++)h+='<div></div>';
+  for(let d=1;d<=len;d++){
+    const g=j2g(calY,calM,d),col=(dow+d-1)%7,red=col===6||HOL[calM+'-'+d],ev=calEv[calKey(d)]&&calEv[calKey(d)].length;
+    h+='<button class="cd2'+(tj[0]===calY&&tj[1]===calM&&tj[2]===d?' today':'')+(calSel===d?' sel':'')+(red?' red':'')+(ev?' ev':'')+'" data-d="'+d+'"><b>'+fa(d)+'</b><small>'+g[2]+'</small></button>';
+  }
+  $('calgrid').innerHTML=h;$('caltitle').textContent=JMN[calM-1]+' '+fa(calY);
+  const g2=j2g(calY,calM,len),mn=(g,i)=>new Date(g[0],g[1]-1,1).toLocaleString('en',{month:'short'});
+  $('calsub').textContent=mn(first)+' – '+mn(g2)+' '+g2[0];calDetail();
+}
+function calDetail(){
+  if(!calSel){$('caldet').innerHTML='<p class="sub" style="margin:0">روی یک روز بزن تا رویدادهایش را ببینی.</p>';return}
+  const d=calSel,g=j2g(calY,calM,d),dt=new Date(g[0],g[1]-1,g[2]),hol=HOL[calM+'-'+d],evs=calEv[calKey(d)]||[];
+  $('caldet').innerHTML='<b>'+AI.W[dt.getDay()]+' '+fa(d)+' '+JMN[calM-1]+' '+fa(calY)+'</b><div class="sub" style="margin:2px 0 6px;direction:ltr;text-align:right">'+g[0]+'-'+String(g[1]).padStart(2,'0')+'-'+String(g[2]).padStart(2,'0')+'</div>'+(hol?'<div style="color:#e53935;font-weight:700">🎉 '+esc(hol)+'</div>':'')+
+    (evs.length?evs.map((t2,i)=>'<div class="fr"><div>'+esc(t2)+'</div><button data-ed="'+i+'" aria-label="حذف">×</button></div>').join(''):'<p class="sub" style="margin:6px 0">رویدادی ثبت نشده.</p>')+
+    '<div class="aiin" style="margin-top:8px"><input type="text" id="cevin" maxlength="80" placeholder="رویداد جدید…" aria-label="رویداد"><button class="pr" id="cevadd">افزودن</button></div><p class="sub" style="font-size:.7rem;margin:6px 0 0">تعطیلات قمری (مثل عید فطر) در این تقویم نمایش داده نمی‌شود.</p>';
+}
+function calAdd(){const i=$('cevin'),v=i.value.trim();if(!v||!calSel)return;const k=calKey(calSel);(calEv[k]=calEv[k]||[]).push(v);LS.set('sl-cal',calEv);calRender()}
+$('calgrid').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b){calSel=+b.dataset.d;calRender()}});
+$('caldet').addEventListener('click',e=>{
+  if(e.target.closest('#cevadd'))return calAdd();
+  const b=e.target.closest('[data-ed]');if(b){const k=calKey(calSel);calEv[k].splice(+b.dataset.ed,1);if(!calEv[k].length)delete calEv[k];LS.set('sl-cal',calEv);calRender()}
+});
+$('caldet').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='cevin')calAdd()});
+$('calprev').onclick=()=>{calM--;if(calM<1){calM=12;calY--}calSel=null;calRender()};
+$('calnext').onclick=()=>{calM++;if(calM>12){calM=1;calY++}calSel=null;calRender()};
+$('caltoday').onclick=calToday;
+/* ---- Apps: wiring ---- */
+$('app-calc').onclick=()=>{openApp('calc-app');cShow();cHistR()};
+$('app-paint').onclick=()=>{openApp('paint-app');if(!pInit){pInit=true;pBlank()}};
+$('app-cal').onclick=()=>{openApp('cal-app');calToday()};
+$('apps').addEventListener('click',e=>{if(e.target.closest('[data-back]'))appsHome()});
 renderProfile();renderStats();musicBtn();renderTime();go('games');settle();renderFriends();renderQR();try{const ad=new URLSearchParams(location.search).get('add');if(ad)handleInvite(String(location.href))}catch(e){}
 if(musicOn)toast('🎵 برای شروع موسیقی یک بار روی صفحه بزن');
 </script>

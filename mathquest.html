@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Math Quest</title>
+<style>
+:root{--bg:#eef3fa;--ink:#13213a;--muted:#5f6f8c;--card:#fff;--line:rgba(30,60,120,.22);--btn:#2d6cdf;--btnink:#fff;--ok:#2e9e5b;--bad:#d9453b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1524;--ink:#e6ecfa;--muted:#8fa0c0;--card:#18223a;--line:rgba(140,170,240,.25);--btn:#6aa0ff;--btnink:#0b1220;--ok:#5fdc90;--bad:#ff7a6e}}
+:root[data-theme="dark"]{--bg:#0e1524;--ink:#e6ecfa;--muted:#8fa0c0;--card:#18223a;--line:rgba(140,170,240,.25);--btn:#6aa0ff;--btnink:#0b1220;--ok:#5fdc90;--bad:#ff7a6e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.row{display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.hud{display:flex;gap:8px;margin:4px 0}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 14px;text-align:center;font-size:.7rem;color:var(--muted)}
+.hud b{display:block;font-size:1.05rem;color:var(--ink)}
+.bar{width:min(94vw,420px);height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#ff7a6e,#ffd23f,#5fdc90);width:100%;transition:width .2s linear}
+.q{width:min(94vw,420px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 12px;text-align:center;margin:6px 0}
+#eq{font-size:clamp(1.5rem,8vw,2.3rem);font-weight:800;direction:ltr;font-family:"Trebuchet MS",Tahoma,sans-serif;min-height:1.4em}
+#ask{color:var(--muted);font-size:.85rem;margin-top:4px}
+#ans{margin:10px auto 0;width:min(70%,240px);padding:8px;border:2px solid var(--line);border-radius:12px;font-size:1.6rem;font-weight:800;direction:ltr;min-height:2.6rem}
+#fb{min-height:3.2em;margin-top:8px;font-weight:700;line-height:1.8}
+#fb.ok{color:var(--ok)}#fb.bad{color:var(--bad)}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:min(94vw,420px);direction:ltr}
+.pad button{height:54px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:1.3rem;font-weight:700;cursor:pointer}
+.pad button:active{filter:brightness(1.2)}
+.pad .go{background:var(--btn);color:var(--btnink);border:0;grid-column:span 2}
+.ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(8,14,28,.88);color:#fff;text-align:center;padding:16px;z-index:9}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center;max-width:420px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🧮 Math Quest</h1>
+<div class="row">
+  <select id="md" aria-label="نوع سؤال"><option value="0">محاسبه‌ی ساده</option><option value="1">معادله‌ی خطی</option><option value="2">معادله‌ی دو طرفه</option><option value="3">معادله‌ی درجه ۲</option><option value="4" selected>ترکیبی (به‌تدریج سخت‌تر)</option></select>
+  <button class="b pr" id="nw">شروع</button>
+</div>
+<div class="hud"><div>امتیاز<b id="sc">۰</b></div><div>جان<b id="hp">❤️❤️❤️</b></div><div>پشت‌سرهم<b id="stk">۰</b></div><div>رکورد<b id="bs">۰</b></div></div>
+<div class="bar"><i id="tb"></i></div>
+<div class="q"><div id="eq">—</div><div id="ask"></div><div id="ans"></div><div id="fb"></div></div>
+<div class="pad" id="pad"></div>
+<div class="ov" id="ov"><h2 id="ot"></h2><p id="om" style="margin:0;line-height:1.9"></p><button class="b pr" id="ob">دوباره</button></div>
+<div class="hint">پاسخ را با صفحه‌کلید بنویس و ✓ را بزن. در معادله‌ی درجه ۲ هر یک از ریشه‌ها قبول است. هرچه سریع‌تر جواب بدهی، امتیاز بیشتری می‌گیری.</div>
+<script>
+const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+let mode=4,score=0,lives=3,streak=0,qn=0,cur=null,buf='',tmax=25,tl=25,best=0,running=false,locked=false,au,last=0;
+const bestKey=()=>'mathquest-best-'+mode;
+function beep(f,d=.06){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.05*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),pick=a=>a[Math.floor(Math.random()*a.length)];
+const sg=(n,first)=>first?(n<0?'−'+Math.abs(n):''+n):(n<0?' − '+Math.abs(n):' + '+n);
+const term=(c,v,first)=>{if(c===0)return '';const a=Math.abs(c),co=a===1?'':a;return first?(c<0?'−':'')+co+v:(c<0?' − ':' + ')+co+v};
+function mk(kind,lvl){
+  let eq,ans,ask='x = ?',ex;
+  if(kind===0){
+    const t=pick(lvl<3?['+','−']:['+','−','×','÷']);let a,b,r;
+    if(t==='+'){a=R(5,20+lvl*10);b=R(5,20+lvl*10);r=a+b}else if(t==='−'){a=R(10,40+lvl*10);b=R(1,a);r=a-b}
+    else if(t==='×'){a=R(2,9+lvl);b=R(2,9+lvl);r=a*b}else{b=R(2,9);r=R(2,12+lvl);a=b*r}
+    eq=a+' '+t+' '+b+' = ?';ask='حاصل را بنویس';ans=[r];ex=eq.replace('?',r);
+  }else if(kind===1){
+    const x=R(-9,12),a=R(2,5+lvl),b=R(1,15+lvl*2)*(Math.random()<.5?-1:1),c=a*x+b,f=Math.random();
+    if(f<.7){eq=term(a,'x',true)+(b?sg(b,false):'')+' = '+c;ex='x = ('+c+(b<0?' + '+Math.abs(b):' − '+b)+') ÷ '+a+' = '+x}
+    else{const bb=R(1,6);eq=a+'(x '+(b<0?'−':'+')+' '+bb+') = '+(a*(x+(b<0?-bb:bb)));ex='x '+(b<0?'−':'+')+' '+bb+' = '+(x+(b<0?-bb:bb))+' ← x = '+x}
+    ans=[x];
+  }else if(kind===2){
+    let a=R(2,9),c=R(1,8);while(c===a)c=R(1,8);const x=R(-8,10),b=R(-12,12),d=a*x+b-c*x;
+    eq=term(a,'x',true)+(b?sg(b,false):'')+' = '+term(c,'x',true)+(d?sg(d,false):'');ans=[x];
+    ex=(a-c)+'x = '+(d-b)+' ← x = '+x;if(a<c)ex=(a-c)+'x = '+(d-b)+' ← x = '+x;
+  }else{
+    const p=R(-6,8),q=R(-6,8),B=-(p+q),C=p*q;
+    eq='x²'+(B?(B<0?' − ':' + ')+(Math.abs(B)===1?'':Math.abs(B))+'x':'')+(C?sg(C,false):'')+' = 0';ans=[p,q];ask='یکی از ریشه‌های x را بنویس';
+    ex='(x '+(p<=0?'+ '+Math.abs(p):'− '+p)+')(x '+(q<=0?'+ '+Math.abs(q):'− '+q)+') = 0 ← x = '+p+' یا x = '+q;
+  }
+  return{eq,ans,ask,ex};
+}
+function nextQ(){
+  const lvl=Math.floor(qn/4);
+  let kind=mode;if(mode===4)kind=lvl<1?0:lvl<2?pick([0,1]):lvl<4?pick([1,2]):pick([1,2,3,3]);
+  cur=mk(kind,Math.min(lvl,8));qn++;buf='';locked=false;tmax=Math.max(10,25-lvl*1.2);tl=tmax;
+  $('eq').textContent=cur.eq;$('ask').textContent=cur.ask;$('fb').textContent='';$('fb').className='';show();
+}
+const show=()=>{$('ans').textContent=buf||'\u00A0'};
+function hud(){$('sc').textContent=fa(score);$('hp').textContent='❤️'.repeat(Math.max(0,lives))||'—';$('stk').textContent=fa(streak);$('bs').textContent=fa(best)}
+function start(){
+  mode=+$('md').value;score=0;lives=3;streak=0;qn=0;best=0;try{best=+localStorage.getItem(bestKey())||0}catch(e){}
+  running=true;$('ov').style.display='none';hud();nextQ();
+}
+function submit(){
+  if(!running||locked||buf===''||buf==='-')return;
+  const v=parseFloat(buf.replace('−','-'));locked=true;
+  if(cur.ans.some(a=>Math.abs(a-v)<1e-9)){
+    streak++;const bonus=Math.round(tl/tmax*10);score+=10+bonus+Math.min(streak,10);beep(800,.12);
+    $('fb').textContent='✅ درست! '+cur.ex;$('fb').className='ok';
+  }else{
+    streak=0;lives--;beep(160,.25);$('fb').textContent='❌ نه — '+cur.ex;$('fb').className='bad';
+  }
+  hud();
+  if(lives<=0){endGame();return}
+  setTimeout(nextQ,1800);
+}
+function endGame(){
+  running=false;if(score>best){best=score;try{localStorage.setItem(bestKey(),best)}catch(e){}}
+  setTimeout(()=>{$('ot').textContent='بازی تمام شد';$('om').innerHTML='امتیاز: '+fa(score)+'<br>سؤال‌ها: '+fa(qn)+' · رکورد: '+fa(best);$('ov').style.display='flex'},1500);hud();
+}
+function press(k){
+  if(!running||locked)return;
+  if(k==='⌫')buf=buf.slice(0,-1);
+  else if(k==='✓')return submit();
+  else if(k==='−'){buf=buf.startsWith('−')?buf.slice(1):'−'+buf}
+  else if(k==='.'){if(!buf.includes('.'))buf+=buf?'.':'0.'}
+  else if(buf.length<7)buf+=k;
+  show();
+}
+$('pad').innerHTML=['7','8','9','⌫','4','5','6','−','1','2','3','.','0','✓'].map(k=>'<button data-k="'+k+'"'+(k==='✓'?' class="go"':'')+'>'+k+'</button>').join('');
+$('pad').addEventListener('click',e=>{const b=e.target.closest('button');if(b)press(b.dataset.k)});
+addEventListener('keydown',e=>{
+  if(/^[0-9]$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('⌫');else if(e.key==='Enter')press('✓');else if(e.key==='-')press('−');else if(e.key==='.')press('.');
+});
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(running&&!locked){
+    tl-=dt;$('tb').style.width=Math.max(0,tl/tmax*100)+'%';
+    if(tl<=0){locked=true;streak=0;lives--;beep(160,.25);$('fb').textContent='⏰ وقت تمام شد — '+cur.ex;$('fb').className='bad';hud();if(lives<=0)endGame();else setTimeout(nextQ,1800)}
+  }
+  requestAnimationFrame(loop);
+}
+$('nw').onclick=start;$('ob').onclick=start;$('md').onchange=start;
+try{best=+localStorage.getItem(bestKey())||0}catch(e){}hud();
+requestAnimationFrame(loop);start();
+</script>
+</body>
+</html>

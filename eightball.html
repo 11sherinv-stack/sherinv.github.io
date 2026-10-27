@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>8 Ball</title>
+<style>
+:root{--bg:#e8eef3;--ink:#14263a;--muted:#5a7188;--card:#fff;--line:rgba(30,70,110,.25);--btn:#0f8a5f;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1620;--ink:#e6f0fa;--muted:#8fa6bd;--card:#16273a;--line:rgba(140,190,240,.25);--btn:#2fd59a;--btnink:#052418}}
+:root[data-theme="dark"]{--bg:#0d1620;--ink:#e6f0fa;--muted:#8fa6bd;--card:#16273a;--line:rgba(140,190,240,.25);--btn:#2fd59a;--btnink:#052418}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 4px;font-size:1.2rem}
+.row{display:flex;gap:6px;margin:3px 0;flex-wrap:wrap;justify-content:center;align-items:center}
+select,button.b{font:inherit;border-radius:8px;padding:6px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+select:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.hud{display:flex;gap:8px;margin:3px 0;font-size:.74rem}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 12px;text-align:center;color:var(--muted)}
+.hud div.on{outline:2px solid var(--btn)}
+.hud b{display:block;font-size:.85rem;color:var(--ink)}
+#stt{min-height:1.5em;font-weight:700;margin:2px 0;text-align:center;font-size:.88rem}
+#tray{display:flex;gap:3px;min-height:20px;margin-bottom:2px}
+#tray i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.6rem;font-style:normal;font-weight:800;color:#fff;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.wrap{position:relative}
+canvas{display:block;height:min(calc(100svh - 215px),600px);aspect-ratio:360/600;width:auto;max-width:96vw;border-radius:14px;touch-action:none}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(6,16,12,.84);color:#fff;border-radius:14px;text-align:center;padding:14px}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.72rem;margin-top:4px;text-align:center;max-width:380px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>🎱 8 Ball</h1>
+<div class="row">
+  <select id="md" aria-label="حالت"><option value="1">مقابل کامپیوتر</option><option value="2">دو نفره</option></select>
+  <select id="lv" aria-label="سطح"><option value="0">آسان</option><option value="1" selected>متوسط</option><option value="2">سخت</option></select>
+  <button class="b pr" id="nw">بازی جدید</button>
+</div>
+<div class="hud"><div id="p0">تو<b id="g0">—</b></div><div id="p1">کامپیوتر<b id="g1">—</b></div></div>
+<div id="stt"></div><div id="tray"></div>
+<div class="wrap"><canvas id="c" width="360" height="600"></canvas><div class="ov" id="ov"><h2 id="ot"></h2><button class="b pr" id="ob">بازی جدید</button></div></div>
+<div class="hint">انگشتت را روی صفحه بگذار، به عقب بکش و رها کن (کشیدن بیشتر = ضربه‌ی محکم‌تر). خط سفید مسیر ضربه را نشان می‌دهد. اول یک توپ را در جیب بیندازی، گروهت (تکی یا راه‌راه) مشخص می‌شود. آخر سر توپ ۸ را بزن.</div>
+<script>
+const W=360,H=600,TX0=22,TY0=22,TX1=338,TY1=578,R=10,PRAD=19,DEC=170,$=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d');
+const POCK=[[TX0,TY0],[TX1,TY0],[TX0,300],[TX1,300],[TX0,TY1],[TX1,TY1]];
+const COL=[null,'#f4c20d','#1e5bd8','#d62828','#6a2c91','#f57c00','#1fa34a','#7a1f1f','#111','#f4c20d','#1e5bd8','#d62828','#6a2c91','#f57c00','#1fa34a','#7a1f1f'];
+let B=[],st='idle',turn=0,groups=[null,null],mode=1,lvl=1,aim=null,firstC=null,potted=[],ownBefore=0,shots=0,last=0,au,placing=false,potAll=[],fx=[];
+function beep(f,d=.04,ty='triangle'){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.04*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+const typeOf=n=>n===8?'eight':n<8?'solid':'stripe',alive=()=>B.filter(b=>b.in),cue=()=>B[0];
+function rack(){
+  B=[];const cx=180,cy=250,dx=R*2.05,dy=R*1.78;
+  const rest=[1,2,3,4,5,6,7,9,10,11,12,13,14,15].filter(n=>n!==8);rest.sort(()=>Math.random()-.5);
+  const solids=rest.filter(n=>n<8),stripes=rest.filter(n=>n>8),corners=[solids.pop(),stripes.pop()].sort(()=>Math.random()-.5);
+  const others=solids.concat(stripes).sort(()=>Math.random()-.5);let k=0;const pos=[];
+  for(let i=0;i<5;i++)for(let j=0;j<=i;j++)pos.push([i,j]);
+  B.push({n:0,x:180,y:470,vx:0,vy:0,in:true});
+  pos.forEach(([i,j])=>{
+    let n;if(i===2&&j===1)n=8;else if(i===4&&j===0)n=corners[0];else if(i===4&&j===4)n=corners[1];else n=others[k++];
+    B.push({n,x:cx+(j-i/2)*dx,y:cy-i*dy,vx:0,vy:0,in:true});
+  });
+}
+function newGame(){
+  mode=+$('md').value;lvl=+$('lv').value;groups=[null,null];turn=0;shots=0;potAll=[];fx=[];rack();$('ov').style.display='none';
+  $('lv').style.display=mode===1?'':'none';$('p0').firstChild.textContent=mode===1?'تو':'بازیکن ۱';$('p1').firstChild.textContent=mode===1?'کامپیوتر':'بازیکن ۲';
+  beginTurn();
+}
+const gname=g=>g==='solid'?'تکی (۱–۷)':g==='stripe'?'راه‌راه (۹–۱۵)':g==='eight'?'توپ ۸':'—';
+function hud(){
+  $('g0').textContent=groups[0]?gname(groups[0]):'—';$('g1').textContent=groups[1]?gname(groups[1]):'—';
+  $('p0').classList.toggle('on',turn===0);$('p1').classList.toggle('on',turn===1);
+  $('tray').innerHTML=potAll.map(n=>'<i style="background:'+(n>8?'#fff;color:#222;box-shadow:inset 0 0 0 3px '+COL[n]:COL[n])+'">'+n+'</i>').join('');
+}
+const human=()=>mode===2||turn===0;
+function beginTurn(){
+  hud();ownBefore=groups[turn]?alive().filter(b=>typeOf(b.n)===groups[turn]).length:99;
+  firstC=null;potted=[];
+  const who=mode===1?(turn===0?'تو':'کامپیوتر'):(turn===0?'بازیکن ۱':'بازیکن ۲');
+  if(!cue().in){st='place';$('stt').textContent=who+': توپ سفید در دست است'+(human()?' — جایی روی میز بزن':'');if(!human())setTimeout(aiPlace,700);return}
+  st='aim';$('stt').textContent='نوبت '+who+(groups[turn]?' — '+gname(groups[turn]):' — میز باز است');
+  if(!human())setTimeout(aiShoot,900);
+}
+function placeCue(px,py){
+  if(px<TX0+R||px>TX1-R||py<TY0+R||py>TY1-R)return false;
+  if(B.some(b=>b.in&&b.n!==0&&Math.hypot(b.x-px,b.y-py)<R*2.05))return false;
+  const c=cue();c.x=px;c.y=py;c.vx=c.vy=0;c.in=true;return true;
+}
+function shoot(ang,power){
+  const c=cue(),sp=Math.min(900,power);c.vx=Math.cos(ang)*sp;c.vy=Math.sin(ang)*sp;st='move';shots++;beep(260,.06);
+}
+function step(dt){
+  const sub=5,sd=dt/sub,live=alive();
+  for(let s=0;s<sub;s++){
+    live.forEach(b=>{
+      if(!b.in)return;b.x+=b.vx*sd;b.y+=b.vy*sd;
+      const sp=Math.hypot(b.vx,b.vy);if(sp>0){const ns=Math.max(0,sp-DEC*sd-sp*.1*sd);const k=ns/sp;b.vx*=k;b.vy*=k;if(ns<6)b.vx=b.vy=0}
+      if(!POCK.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<36)){
+        if(b.x<TX0+R){b.x=TX0+R;b.vx=Math.abs(b.vx)*.78;if(sp>120)beep(180,.03)}
+        if(b.x>TX1-R){b.x=TX1-R;b.vx=-Math.abs(b.vx)*.78;if(sp>120)beep(180,.03)}
+        if(b.y<TY0+R){b.y=TY0+R;b.vy=Math.abs(b.vy)*.78}
+        if(b.y>TY1-R){b.y=TY1-R;b.vy=-Math.abs(b.vy)*.78}
+      }
+    });
+    for(let i=0;i<live.length;i++)for(let j=i+1;j<live.length;j++){
+      const a=live[i],b=live[j];if(!a.in||!b.in)continue;
+      const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
+      if(d<R*2&&d>1e-6){
+        const nx=dx/d,ny=dy/d,ov=(R*2-d)/2;a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
+        const vr=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
+        if(vr>0){const imp=(1+.96)*vr/2;a.vx-=imp*nx;a.vy-=imp*ny;b.vx+=imp*nx;b.vy+=imp*ny;if(vr>60)beep(300+Math.min(vr,600)*.4,.03);
+          if(firstC===null&&(a.n===0||b.n===0))firstC=a.n===0?b.n:a.n}
+      }
+    }
+    live.forEach(b=>{
+      if(!b.in)return;
+      if(POCK.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<PRAD)){b.in=false;b.vx=b.vy=0;potted.push(b.n);beep(120,.15,'sine');if(b.n!==0)potAll.push(b.n);hud()}
+    });
+  }
+}
+function settle(){
+  const pl=turn,opp=1-turn,mine=groups[pl],cueGone=!cue().in,pots=potted.filter(n=>n!==0),eight=pots.includes(8);
+  const onEight=mine&&ownBefore===0;
+  let foul=cueGone||firstC===null,why=cueGone?'توپ سفید در جیب افتاد':firstC===null?'به هیچ توپی نخورد':'';
+  if(!foul){
+    if(mine){if(onEight){if(firstC!==8){foul=true;why='اول باید توپ ۸ را بزنی'}}else if(typeOf(firstC)!==mine){foul=true;why='اول به توپ گروه خودت نخورد'}}
+    else if(firstC===8){foul=true;why='در میز باز نباید اول توپ ۸ را بزنی'}
+  }
+  if(eight){
+    if(shots===1){const e=B.find(b=>b.n===8);e.in=true;e.x=180;e.y=250;e.vx=e.vy=0;potAll=potAll.filter(n=>n!==8);if(B.some(b=>b!==e&&b.in&&Math.hypot(b.x-e.x,b.y-e.y)<R*2))e.y-=24}
+    else return finish(!foul&&onEight?pl:opp,foul&&onEight?'توپ ۸ همراه با خطا افتاد':onEight?'':'توپ ۸ زودتر از موقع افتاد');
+  }
+  if(!foul&&!mine){const f=pots.find(n=>n!==8);if(f){groups[pl]=typeOf(f);groups[opp]=groups[pl]==='solid'?'stripe':'solid'}}
+  const g=groups[pl],ownPot=pots.some(n=>n!==8&&(!g||typeOf(n)===g));
+  if(foul){turn=opp;$('stt').textContent='⚠️ خطا: '+why;beep(150,.2,'sawtooth');
+    if(cueGone){const c=cue();c.in=false}
+    setTimeout(()=>{if(!cue().in)placeCueInHand();beginTurn()},1200);return}
+  if(ownPot){$('stt').textContent='👍 توپ در جیب افتاد — دوباره بزن';setTimeout(beginTurn,700)}
+  else{turn=opp;setTimeout(beginTurn,500)}
+  hud();
+}
+function placeCueInHand(){const c=cue();c.in=false}
+function finish(winner,why){
+  st='over';const w=mode===1?(winner===0?'🏆 تو بردی!':'😅 کامپیوتر برد'):'🏆 '+(winner===0?'بازیکن ۱':'بازیکن ۲')+' برنده شد';
+  $('ot').innerHTML=w+(why?'<br><small>'+why+'</small>':'');$('ov').style.display='flex';beep(winner===0?900:160,.4);hud();
+}
+// ---- AI
+const segDist=(px,py,ax,ay,bx,by)=>{const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy||1;let t=((px-ax)*dx+(py-ay)*dy)/l2;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(ax+dx*t),py-(ay+dy*t))};
+function targets(){
+  const g=groups[turn],al=alive().filter(b=>b.n!==0);
+  if(!g)return al.filter(b=>b.n!==8);
+  const own=al.filter(b=>typeOf(b.n)===g);return own.length?own:al.filter(b=>b.n===8);
+}
+function aiShoot(){
+  if(st!=='aim')return;const c=cue(),T=targets(),others=alive();let best=null;
+  for(const t of T)for(const p of POCK){
+    const dx=p[0]-t.x,dy=p[1]-t.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d,gx=t.x-ux*2*R,gy=t.y-uy*2*R;
+    if(gx<TX0+R||gx>TX1-R||gy<TY0+R||gy>TY1-R)continue;
+    const cx=gx-c.x,cy=gy-c.y,cd=Math.hypot(cx,cy);if(cd<4)continue;
+    const cosA=(cx*ux+cy*uy)/cd;if(cosA<.3)continue;
+    if(others.some(o=>o!==c&&o!==t&&(segDist(o.x,o.y,c.x,c.y,gx,gy)<R*2-1||segDist(o.x,o.y,t.x,t.y,p[0],p[1])<R*2-1)))continue;
+    const sc=cosA*100-cd*.05-d*.08;if(!best||sc>best.sc)best={sc,gx,gy,cd,d,t};
+  }
+  let ang,pw;
+  if(best){ang=Math.atan2(best.gy-c.y,best.gx-c.x);pw=Math.min(900,260+(best.cd+best.d)*1.2)}
+  else{const t=T.sort((a,b)=>Math.hypot(a.x-c.x,a.y-c.y)-Math.hypot(b.x-c.x,b.y-c.y))[0]||alive().find(b=>b.n!==0);ang=Math.atan2(t.y-c.y,t.x-c.x);pw=380+Math.random()*320}
+  const err=[.06,.026,.008][lvl]*(Math.random()-.5)*2;shoot(ang+err,shots===0?900:pw);
+}
+function aiPlace(){
+  for(let k=0;k<200;k++){const px=TX0+R+Math.random()*(TX1-TX0-2*R),py=420+Math.random()*(TY1-R-420);if(placeCue(px,py))break}
+  st='aim';beginTurn2();
+}
+function beginTurn2(){$('stt').textContent='نوبت '+(mode===1?'کامپیوتر':'بازیکن ۲');setTimeout(aiShoot,700)}
+// ---- input
+const pos=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}};
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();if(!human())return;const p=pos(e);
+  if(st==='place'){if(placeCue(p.x,p.y)){st='aim';$('stt').textContent='نوبت '+(mode===1?'تو':(turn===0?'بازیکن ۱':'بازیکن ۲'))+' — بکش و رها کن';beep(400,.05)}return}
+  if(st==='aim'){cv.setPointerCapture(e.pointerId);aim={sx:p.x,sy:p.y,cx:p.x,cy:p.y}}
+});
+cv.addEventListener('pointermove',e=>{if(aim){const p=pos(e);aim.cx=p.x;aim.cy=p.y}});
+function release(){
+  if(!aim)return;const vx=aim.sx-aim.cx,vy=aim.sy-aim.cy,len=Math.hypot(vx,vy);aim=null;
+  if(len<14||st!=='aim')return;shoot(Math.atan2(vy,vx),Math.min(1,len/170)*900+60);
+}
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,release));
+// ---- draw
+function ball(b){
+  const col=COL[b.n]||'#fff';x.save();x.translate(b.x,b.y);
+  x.fillStyle='rgba(0,0,0,.28)';x.beginPath();x.arc(2,3,R,0,7);x.fill();
+  x.beginPath();x.arc(0,0,R,0,7);x.clip();
+  x.fillStyle=b.n===0?'#f8f8f2':b.n>8?'#fff':col;x.fillRect(-R,-R,R*2,R*2);
+  if(b.n>8){x.fillStyle=col;x.fillRect(-R,-R*.55,R*2,R*1.1)}
+  if(b.n!==0){x.fillStyle='#fff';x.beginPath();x.arc(0,0,R*.46,0,7);x.fill();x.fillStyle='#111';x.font='bold 8px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(b.n,0,.5)}
+  const g=x.createRadialGradient(-3,-3,1,0,0,R);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.5,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(0,0,0,.25)');x.fillStyle=g;x.fillRect(-R,-R,R*2,R*2);
+  x.restore();
+}
+function draw(){
+  x.fillStyle='#5a3a1c';x.beginPath();x.roundRect(0,0,W,H,16);x.fill();
+  x.fillStyle='#0f7a4a';x.fillRect(TX0,TY0,TX1-TX0,TY1-TY0);
+  x.strokeStyle='rgba(255,255,255,.18)';x.lineWidth=1.5;x.beginPath();x.moveTo(TX0,430);x.lineTo(TX1,430);x.stroke();x.beginPath();x.arc(180,250,2,0,7);x.stroke();
+  x.fillStyle='#3a2410';POCK.forEach(p=>{x.beginPath();x.arc(p[0],p[1],PRAD+3,0,7);x.fill();x.fillStyle='#050505';x.beginPath();x.arc(p[0],p[1],PRAD,0,7);x.fill();x.fillStyle='#3a2410'});
+  B.forEach(b=>{if(b.in)ball(b)});
+  const c=cue();
+  if(st==='aim'&&c.in&&human()){
+    let ang=null,pw=0;
+    if(aim){const vx=aim.sx-aim.cx,vy=aim.sy-aim.cy,len=Math.hypot(vx,vy);if(len>6){ang=Math.atan2(vy,vx);pw=Math.min(1,len/170)}}
+    if(ang!==null){
+      const dx=Math.cos(ang),dy=Math.sin(ang);
+      let hitT=700,hb=null;
+      alive().forEach(b=>{if(b===c)return;const ox=b.x-c.x,oy=b.y-c.y,pr=ox*dx+oy*dy;if(pr<0)return;const pd=Math.abs(ox*dy-oy*dx);if(pd<R*2){const t=pr-Math.sqrt(Math.max(0,R*R*4-pd*pd));if(t<hitT){hitT=t;hb=b}}});
+      x.strokeStyle='rgba(255,255,255,.75)';x.lineWidth=2;x.setLineDash([7,6]);x.beginPath();x.moveTo(c.x,c.y);x.lineTo(c.x+dx*hitT,c.y+dy*hitT);x.stroke();x.setLineDash([]);
+      x.beginPath();x.arc(c.x+dx*hitT,c.y+dy*hitT,R,0,7);x.stroke();
+      const sx=c.x-dx*(14+pw*70),sy=c.y-dy*(14+pw*70);x.strokeStyle='#e8c88a';x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(sx,sy);x.lineTo(sx-dx*160,sy-dy*160);x.stroke();
+    }
+  }
+  if(st==='place'&&human()){x.fillStyle='rgba(255,255,255,.18)';x.fillRect(TX0,TY0,TX1-TX0,TY1-TY0)}
+}
+function loop(t){
+  const dt=Math.min(.033,(t-last)/1000||0);last=t;
+  if(st==='move'){step(dt);if(!alive().some(b=>b.vx||b.vy)){st='settle';setTimeout(settle,250)}}
+  draw();requestAnimationFrame(loop);
+}
+$('nw').onclick=newGame;$('ob').onclick=newGame;['md','lv'].forEach(i=>$(i).onchange=newGame);
+newGame();requestAnimationFrame(loop);
+</script>
+</body>
+</html>

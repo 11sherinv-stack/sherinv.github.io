@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="description" content="بازی آنلاین رایگان از مجموعه‌ی S loop">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arrow Puzzle</title>
+<style>
+:root{--bg:#eef2f7;--ink:#1c2230;--muted:#667085;--card:#fff;--line:#ccd2dd;--btn:#2d6cdf;--btnink:#fff;--board:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161f;--ink:#e8ecf3;--muted:#99a3b5;--card:#1d2431;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--board:#1b2230}}
+:root[data-theme="dark"]{--bg:#12161f;--ink:#e8ecf3;--muted:#99a3b5;--card:#1d2431;--line:#384052;--btn:#5b94f5;--btnink:#0b1220;--board:#1b2230}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+h1{margin:2px 0 6px;font-size:1.3rem}
+.hud{display:flex;gap:8px;margin-bottom:6px}
+.hud div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 14px;text-align:center;font-size:.7rem;color:var(--muted)}
+.hud b{display:block;font-size:1.05rem;color:var(--ink)}
+.row{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center}
+button.b{font:inherit;border-radius:10px;padding:8px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pr{background:var(--btn);color:var(--btnink);border:0}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.wrap{position:relative;width:min(96vw,480px)}
+canvas{display:block;width:100%;aspect-ratio:1;border-radius:14px;background:var(--board);box-shadow:0 3px 12px rgba(0,0,0,.2);touch-action:none}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,14,24,.84);color:#fff;border-radius:14px;text-align:center;padding:14px}
+.ov h2{margin:0}
+.hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center;max-width:480px}
+</style>
+</head>
+<body><a href="index.html" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;z-index:999;background:#586a2bd9;color:#f1f8d0;padding:4px 10px;border-radius:14px;font:12px sans-serif;text-decoration:none">&larr; S loop</a>
+<h1>➡️ Arrow Puzzle</h1>
+<div class="hud"><div>مرحله<b id="lv">۱</b></div><div>باقی‌مانده<b id="lf">۰</b></div><div>جان<b id="hp">❤️❤️❤️</b></div><div>رکورد<b id="bs">۱</b></div></div>
+<div class="wrap"><canvas id="c" width="480" height="480"></canvas><div class="ov" id="ov"><h2 id="ot"></h2><p id="om" style="margin:0"></p><button class="b pr" id="ob">ادامه</button></div></div>
+<div class="row"><button class="b" id="hb">💡 راهنما</button><button class="b" id="rs">↻ شروع دوباره</button></div>
+<div class="hint">روی یک پیکان بزن تا در جهت سرش بلغزد و از صفحه خارج شود. فقط اگر مسیرش خالی باشد خارج می‌شود؛ وگرنه یک جان از دست می‌دهی. همه‌ی پیکان‌ها را خارج کن.</div>
+<script>
+const $=i=>document.getElementById(i),cv=$('c'),x=cv.getContext('2d'),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const D=[[0,-1],[1,0],[0,1],[-1,0]];
+let n=4,arrows=[],level=1,best=1,lives=3,cs=0,hint=null,over=false,last=0,au;
+try{level=+localStorage.getItem('arrow-level')||1;best=+localStorage.getItem('arrow-best')||1}catch(e){}
+function beep(f,d=.05){try{au=au||new(window.AudioContext||window.webkitAudioContext)();const o=au.createOscillator(),g=au.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.04*((location.hash.match(/v(\d+)/)||[0,100])[1]/100);o.connect(g);g.connect(au.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}catch(e){}}
+function gen(){
+  n=Math.min(10,4+Math.floor((level-1)/2));cs=cv.width/n;arrows=[];over=false;lives=3;hint=null;
+  const occ=new Set(),target=Math.floor(n*n*(.5+Math.min(level,12)*.02)),maxLen=Math.min(4,2+Math.floor(level/3));let guard=0;
+  while(occ.size<target&&guard++<6000){
+    const dir=Math.floor(Math.random()*4),len=1+Math.floor(Math.random()*maxLen),[dx,dy]=D[dir];
+    const hx=Math.floor(Math.random()*n),hy=Math.floor(Math.random()*n),cells=[];let ok=true;
+    for(let k=0;k<len;k++){const cx=hx-dx*k,cy=hy-dy*k;if(cx<0||cy<0||cx>=n||cy>=n||occ.has(cx+','+cy)){ok=false;break}cells.push([cx,cy])}
+    if(!ok)continue;
+    let fx=hx+dx,fy=hy+dy;while(fx>=0&&fy>=0&&fx<n&&fy<n){if(occ.has(fx+','+fy)){ok=false;break}fx+=dx;fy+=dy}
+    if(!ok)continue;
+    cells.forEach(([cx,cy])=>occ.add(cx+','+cy));arrows.push({cells,dir,hue:Math.floor(Math.random()*360),off:0,state:'in',shake:0});
+  }
+  hud();$('ov').style.display='none';
+}
+const alive=()=>arrows.filter(a=>a.state==='in');
+function free(a){
+  const[dx,dy]=D[a.dir],[hx,hy]=a.cells[0];let fx=hx+dx,fy=hy+dy;
+  const occ=new Set();alive().forEach(b=>{if(b!==a)b.cells.forEach(([cx,cy])=>occ.add(cx+','+cy))});
+  while(fx>=0&&fy>=0&&fx<n&&fy<n){if(occ.has(fx+','+fy))return false;fx+=dx;fy+=dy}
+  return true;
+}
+function hud(){$('lv').textContent=fa(level);$('lf').textContent=fa(alive().length);$('hp').textContent='❤️'.repeat(Math.max(0,lives))||'—';$('bs').textContent=fa(best)}
+function tapAt(px,py){
+  if(over)return;const cx=Math.floor(px/cs),cy=Math.floor(py/cs);
+  const a=alive().find(q=>q.cells.some(c=>c[0]===cx&&c[1]===cy));if(!a)return;
+  if(free(a)){a.state='out';hint=null;hud();beep(500+a.cells.length*60,.08)}
+  else{a.shake=.35;lives--;beep(160,.18);hud();if(lives<=0){over=true;setTimeout(()=>{$('ot').textContent='جان‌هایت تمام شد 😅';$('om').textContent='مرحله‌ی '+fa(level);$('ob').textContent='دوباره';$('ob').onclick=gen;$('ov').style.display='flex'},500)}}
+}
+function checkWin(){
+  if(over||arrows.length===0||arrows.some(a=>a.state!=='gone'))return;
+  over=true;if(level>=best){best=level+1;try{localStorage.setItem('arrow-best',best)}catch(e){}}
+  beep(900,.3);$('ot').textContent='🎉 مرحله تمام شد!';$('om').textContent='جان‌های باقی‌مانده: '+fa(lives);$('ob').textContent='مرحله‌ی بعد';
+  $('ob').onclick=()=>{level++;try{localStorage.setItem('arrow-level',level)}catch(e){}gen()};$('ov').style.display='flex';hud();
+}
+function arrowPath(a,off){
+  const[dx,dy]=D[a.dir],pts=a.cells.slice().reverse().map(([cx,cy])=>[(cx+.5)*cs+dx*off,(cy+.5)*cs+dy*off]);return pts;
+}
+function draw(t){
+  const dark=getComputedStyle(document.body).backgroundColor;x.clearRect(0,0,480,480);
+  x.fillStyle='rgba(127,127,127,.22)';for(let i=0;i<n;i++)for(let j=0;j<n;j++){x.beginPath();x.arc((i+.5)*cs,(j+.5)*cs,cs*.05,0,7);x.fill()}
+  arrows.forEach(a=>{
+    if(a.state==='gone')return;
+    const sh=a.shake>0?Math.sin(a.shake*60)*5:0,[dx,dy]=D[a.dir],pts=arrowPath(a,a.off),col='hsl('+a.hue+',70%,'+(hint===a&&Math.floor(t/150)%2?'72%':'52%')+')';
+    x.save();x.translate(dy?sh:0,dx?sh:0);x.strokeStyle=col;x.fillStyle=col;x.lineWidth=cs*.26;x.lineCap='round';x.lineJoin='round';
+    x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));
+    if(pts.length===1){x.lineTo(pts[0][0]+.01,pts[0][1])}x.stroke();
+    const h=pts[pts.length-1],s=cs*.3,px=-dy,py=dx;
+    x.beginPath();x.moveTo(h[0]+dx*s*1.25,h[1]+dy*s*1.25);x.lineTo(h[0]+px*s*.95,h[1]+py*s*.95);x.lineTo(h[0]-px*s*.95,h[1]-py*s*.95);x.closePath();x.fill();
+    x.restore();
+  });
+}
+function loop(t){
+  const dt=Math.min(.04,(t-last)/1000||0);last=t;
+  arrows.forEach(a=>{
+    if(a.shake>0)a.shake=Math.max(0,a.shake-dt);
+    if(a.state==='out'){a.off+=cv.width*1.6*dt;if(a.off>cv.width*1.4){a.state='gone';hud();checkWin()}}
+  });
+  draw(t);requestAnimationFrame(loop);
+}
+cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect();tapAt((e.clientX-r.left)/r.width*480,(e.clientY-r.top)/r.height*480)});
+$('hb').onclick=()=>{hint=alive().find(free)||null;if(hint)setTimeout(()=>{hint=null},2500)};
+$('rs').onclick=gen;
+gen();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
