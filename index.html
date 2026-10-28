@@ -130,6 +130,14 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 .cd2{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative}
 .cd2 b{font-size:1rem}.cd2 small{font-size:.6rem;color:var(--muted)}.cd2.red b{color:#e53935}.cd2.today{background:var(--lime);color:#2f3d10}.cd2.today small{color:#2f3d10}.cd2.sel{outline:3px solid var(--tq)}
 .cd2.ev::after{content:"";position:absolute;bottom:4px;width:6px;height:6px;border-radius:50%;background:var(--tq)}
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--ink);font:inherit;cursor:pointer}.tabs button.on{background:var(--tq);color:#fff;border-color:transparent}
+.bigt{font-size:2.8rem;font-weight:800;text-align:center;direction:ltr;font-variant-numeric:tabular-nums;margin:6px 0}
+.tring{width:210px;display:block;margin:4px auto}.tr0{fill:none;stroke:var(--line);stroke-width:8}.tr1{fill:none;stroke:var(--tq);stroke-width:8;stroke-linecap:round;transform:rotate(-90deg);transform-origin:60px 60px;transition:stroke-dashoffset .25s linear}.tring text{font-size:20px;font-weight:800;fill:var(--ink);direction:ltr}
+.prow input[type=number],.prow input[type=time],.prow input[type=text]{padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;width:74px;text-align:center}.prow input[type=text]{width:140px;text-align:right}
+.wc,.alr,.lap,.rcr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.wc b,.lap b{direction:ltr;font-variant-numeric:tabular-nums}
+.rcr{flex-wrap:wrap}.rcr audio{width:100%;margin-top:4px}
+#ring{position:fixed;inset:0;z-index:120;background:rgba(10,14,8,.88);display:flex;align-items:center;justify-content:center;padding:20px}#ring[hidden]{display:none}
+.rbox{background:var(--head);color:#f1f8d0;border-radius:22px;padding:26px 22px;text-align:center;max-width:320px;width:100%}.rbell{font-size:3.4rem;animation:rng .5s infinite alternate}@keyframes rng{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
 .saver *{animation:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -177,7 +185,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 <section id="apps" hidden>
   <h2>Apps</h2>
   <div id="apps-home"><p class="sub">برنامه‌های کاربردی S loop</p>
-    <div class="appgrid"><button class="app" id="app-notes"><span>📝</span><b>Notes</b><small>یادداشت</small></button><button class="app" id="app-calc"><span>🧮</span><b>Calculator</b><small>ماشین حساب</small></button><button class="app" id="app-paint"><span>🎨</span><b>Paint</b><small>نقاشی</small></button><button class="app" id="app-cal"><span>📅</span><b>Calendar</b><small>تقویم</small></button><div class="app soon"><span>➕</span><b>به‌زودی</b><small>برنامه‌های بیشتر</small></div></div>
+    <div class="appgrid"><button class="app" id="app-notes"><span>📝</span><b>Notes</b><small>یادداشت</small></button><button class="app" id="app-calc"><span>🧮</span><b>Calculator</b><small>ماشین حساب</small></button><button class="app" id="app-paint"><span>🎨</span><b>Paint</b><small>نقاشی</small></button><button class="app" id="app-cal"><span>📅</span><b>Calendar</b><small>تقویم</small></button><button class="app" id="app-clock"><span>⏰</span><b>Clock</b><small>ساعت، تایمر، زنگ</small></button><button class="app" id="app-rec"><span>🎙</span><b>Recorder</b><small>ضبط صدا</small></button><div class="app soon"><span>➕</span><b>به‌زودی</b><small>برنامه‌های بیشتر</small></div></div>
   </div>
   <div id="notes-app" hidden>
     <div id="nlist-wrap">
@@ -216,6 +224,35 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
     <div class="box"><div class="sr"><button class="al" id="calprev" aria-label="ماه قبل">▶</button><div style="text-align:center"><b id="caltitle"></b><div class="sub" id="calsub" style="margin:0;font-size:.74rem"></div></div><button class="al" id="calnext" aria-label="ماه بعد">◀</button></div><div class="calg" id="calgrid"></div></div>
     <div class="box" id="caldet"></div>
   </div>
+
+  <div id="clock-app" hidden>
+    <div class="sr"><button class="al" data-back="1">← Apps</button><b>⏰ ساعت</b><span></span></div>
+    <div class="box">
+      <div class="tabs" id="ctabs"><button data-tb="now" class="on">ساعت</button><button data-tb="timer">تایمر</button><button data-tb="sw">کرنومتر</button><button data-tb="alarm">زنگ</button></div>
+      <div id="tb-now"><div id="cl-time" class="bigt">۰۰:۰۰:۰۰</div><div id="cl-date" class="sub" style="text-align:center;margin:0 0 10px"></div><div id="cl-world"></div></div>
+      <div id="tb-timer" hidden>
+        <svg viewBox="0 0 120 120" class="tring" aria-hidden="true"><circle cx="60" cy="60" r="52" class="tr0"/><circle id="tmc" cx="60" cy="60" r="52" class="tr1" stroke-dasharray="326.7" stroke-dashoffset="0"/><text id="tmt" x="60" y="68" text-anchor="middle">۰۰:۰۰</text></svg>
+        <div class="prow"><input type="number" id="tmh" min="0" max="23" value="0" aria-label="ساعت"><span>:</span><input type="number" id="tmm" min="0" max="59" value="5" aria-label="دقیقه"><span>:</span><input type="number" id="tms" min="0" max="59" value="0" aria-label="ثانیه"></div>
+        <div class="prow" id="tpre"><button class="al" data-s="60">۱ دقیقه</button><button class="al" data-s="300">۵ دقیقه</button><button class="al" data-s="600">۱۰ دقیقه</button><button class="al" data-s="900">۱۵ دقیقه</button><button class="al" data-s="1800">۳۰ دقیقه</button></div>
+        <div class="prow"><button class="pr" id="tmgo">▶ شروع</button><button class="al" id="tmrst">↺ ریست</button></div>
+      </div>
+      <div id="tb-sw" hidden>
+        <div id="swd" class="bigt">۰۰:۰۰٫۰۰</div>
+        <div class="prow"><button class="pr" id="swgo">▶ شروع</button><button class="al" id="swlap">🏁 دور</button><button class="al" id="swrst">↺ ریست</button></div>
+        <div id="swlaps"></div>
+      </div>
+      <div id="tb-alarm" hidden>
+        <div class="prow"><input type="time" id="alt" value="07:00" aria-label="زمان زنگ"><input type="text" id="alb" maxlength="30" placeholder="عنوان (اختیاری)" aria-label="عنوان"><button class="pr" id="aladd">➕ افزودن</button></div>
+        <div id="allist"></div>
+        <p class="sub" style="font-size:.72rem;margin:8px 0 0">زنگ‌ها هر روز تکرار می‌شوند و فقط وقتی کار می‌کنند که این صفحه در مرورگر باز باشد.</p>
+      </div>
+    </div>
+  </div>
+  <div id="rec-app" hidden>
+    <div class="sr"><button class="al" data-back="1">← Apps</button><b>🎙 ضبط صدا</b><span></span></div>
+    <div class="box ctr"><div id="rtime" class="bigt">۰۰:۰۰</div><canvas id="rlvl" width="300" height="40" style="width:100%;max-width:300px"></canvas><div style="margin-top:8px"><button class="pr" id="rrec">⏺ شروع ضبط</button></div><p class="sub" id="rmsg" style="font-size:.76rem;margin:8px 0 0">برای شروع، اجازه‌ی میکروفن را بده. ضبط‌ها فقط روی همین دستگاه ذخیره می‌شوند.</p></div>
+    <div class="box"><b>ضبط‌های من</b><div id="rlist"></div></div>
+  </div>
 </section>
 
 <section id="account" hidden>
@@ -247,6 +284,13 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
   </div>
   <div class="box"><div class="row" style="margin:0"><div><div>🔋 حالت ذخیره باتری</div><div class="sub" style="margin:2px 0 0;font-size:.78rem">نور صفحه را کم می‌کند، به حالت شب می‌رود و انیمیشن‌ها را خاموش می‌کند.</div></div><label class="sw"><input type="checkbox" id="bs" aria-label="Battery saver"><span></span></label></div></div>
   <div class="box"><div class="row" style="margin:0 0 8px"><span>⏳ مدیریت زمان (سقف بازی در روز)</span><select id="tl" aria-label="Daily limit"><option value="0">بدون محدودیت</option><option value="15">۱۵ دقیقه</option><option value="30">۳۰ دقیقه</option><option value="45">۴۵ دقیقه</option><option value="60">۱ ساعت</option><option value="90">۱٫۵ ساعت</option><option value="120">۲ ساعت</option></select></div><div class="sub" id="tused" style="margin:0"></div></div>
+  <div class="box"><b>🖼 پس‌زمینه‌ی دلخواه</b><div class="sub" style="margin:4px 0 8px;font-size:.78rem">یکی از رنگ‌ها را بزن یا عکسی از گالری انتخاب کن.</div>
+    <div class="pcols" id="bgp"></div>
+    <div class="pcols"><button class="al" id="bgpick">📷 انتخاب عکس از گالری</button><button class="al" id="bgrm">↺ پیش‌فرض</button><input type="file" id="bgfile" accept="image/*" hidden></div>
+    <div class="row" style="margin:8px 0 0"><span>تیرگی عکس</span><input type="range" id="bgdim" min="0" max="70" value="25"></div></div>
+  <div class="box"><b>🎵 آهنگ دلخواه</b><div class="sub" id="musname" style="margin:4px 0 8px;font-size:.8rem"></div>
+    <div class="pcols"><button class="al" id="mupick">🎶 انتخاب آهنگ از دستگاه</button><button class="al" id="murm">↺ آهنگ پیش‌فرض</button><input type="file" id="mufile" accept="audio/*" hidden></div>
+    <p class="sub" style="font-size:.72rem;margin:6px 0 0">فایل فقط روی همین دستگاه ذخیره می‌شود (حداکثر ۳۰ مگابایت) و به‌جای موسیقی پیش‌فرض پخش می‌شود.</p></div>
 </section>
 
 <section id="creator" hidden>
@@ -259,7 +303,7 @@ button.al{font:inherit;background:transparent;color:var(--ink);border:1px solid 
 </main>
 <div id="sfw"><div class="sbub" id="sbub" role="button" tabindex="0">چه کمکی از دستم بر می‌آید؟<button id="sbx" aria-label="Close">×</button></div><button id="sfab" aria-label="Support" title="Support">🎧</button></div>
 <div id="spop" hidden><div class="sph"><b>🎧 پشتیبانی S loop</b><button id="spx" aria-label="Close">×</button></div><div class="smsgs" id="sm"></div><div class="schips" id="sc"></div><div class="aiin"><input type="text" id="si" placeholder="چه کمکی از دستم بر می‌آید؟" autocomplete="off" aria-label="پیام پشتیبانی"><button class="pr" id="ss">ارسال</button></div></div>
-<div id="toast"></div><noscript><ul><li><a href="snake.html">Snake Advanced</a></li><li><a href="arena.html">Arena Battle</a></li><li><a href="2048.html">2048</a></li><li><a href="tetris.html">Tetris</a></li><li><a href="dino.html">Dino Run</a></li><li><a href="flappy.html">Flappy Bird Advanced</a></li><li><a href="maze.html">Maze</a></li><li><a href="sudoku.html">Sudoku</a></li><li><a href="candy.html">Candy Match</a></li><li><a href="breakout.html">Breakout</a></li><li><a href="tictactoe.html">Tic Tac Toe</a></li><li><a href="chess.html">Chess</a></li><li><a href="memory.html">Memory Cards</a></li><li><a href="ludo.html">Ludo</a></li><li><a href="snakeladder.html">Snakes &amp; Ladders</a></li><li><a href="uno.html">UNO</a></li><li><a href="airhockey.html">Air Hockey</a></li><li><a href="skyraid.html">Sky Raid</a></li><li><a href="happybird.html">Happy Bird</a></li><li><a href="seabattle.html">Sea Battle</a></li><li><a href="riverjet.html">River Jet</a></li><li><a href="truthdare.html">Truth or Dare</a></li><li><a href="solitaire.html">Solitaire</a></li><li><a href="raiders.html">Clan Raiders</a></li><li><a href="pinball.html">Pinball</a></li><li><a href="rps.html">Rock Paper Scissors</a></li><li><a href="pixelhero.html">Pixel Hero</a></li><li><a href="watersort.html">Water Sort</a></li><li><a href="rubik.html">Rubik Cube</a></li><li><a href="connect4.html">Connect 4</a></li><li><a href="hoopshot.html">Hoop Shot</a></li><li><a href="knifethrow.html">Knife Throw</a></li><li><a href="checkers.html">Checkers</a></li><li><a href="soccerpool.html">Soccer Pool</a></li><li><a href="cupgame.html">Cup Game</a></li><li><a href="arrowpuzzle.html">Arrow Puzzle</a></li><li><a href="mathquest.html">Math Quest</a></li><li><a href="eightball.html">8 Ball</a></li></ul></noscript>
+<div id="ring" hidden><div class="rbox"><div class="rbell">⏰</div><h2 id="ringt"></h2><p id="rings" style="margin:0"></p><div class="prow"><button class="pr" id="ringok">خاموش</button><button class="al" id="ringsnz">۵ دقیقه بعد</button></div></div></div><div id="toast"></div><noscript><ul><li><a href="snake.html">Snake Advanced</a></li><li><a href="arena.html">Arena Battle</a></li><li><a href="2048.html">2048</a></li><li><a href="tetris.html">Tetris</a></li><li><a href="dino.html">Dino Run</a></li><li><a href="flappy.html">Flappy Bird Advanced</a></li><li><a href="maze.html">Maze</a></li><li><a href="sudoku.html">Sudoku</a></li><li><a href="candy.html">Candy Match</a></li><li><a href="breakout.html">Breakout</a></li><li><a href="tictactoe.html">Tic Tac Toe</a></li><li><a href="chess.html">Chess</a></li><li><a href="memory.html">Memory Cards</a></li><li><a href="ludo.html">Ludo</a></li><li><a href="snakeladder.html">Snakes &amp; Ladders</a></li><li><a href="uno.html">UNO</a></li><li><a href="airhockey.html">Air Hockey</a></li><li><a href="skyraid.html">Sky Raid</a></li><li><a href="happybird.html">Happy Bird</a></li><li><a href="seabattle.html">Sea Battle</a></li><li><a href="riverjet.html">River Jet</a></li><li><a href="truthdare.html">Truth or Dare</a></li><li><a href="solitaire.html">Solitaire</a></li><li><a href="raiders.html">Clan Raiders</a></li><li><a href="pinball.html">Pinball</a></li><li><a href="rps.html">Rock Paper Scissors</a></li><li><a href="pixelhero.html">Pixel Hero</a></li><li><a href="watersort.html">Water Sort</a></li><li><a href="rubik.html">Rubik Cube</a></li><li><a href="connect4.html">Connect 4</a></li><li><a href="hoopshot.html">Hoop Shot</a></li><li><a href="knifethrow.html">Knife Throw</a></li><li><a href="checkers.html">Checkers</a></li><li><a href="soccerpool.html">Soccer Pool</a></li><li><a href="cupgame.html">Cup Game</a></li><li><a href="arrowpuzzle.html">Arrow Puzzle</a></li><li><a href="mathquest.html">Math Quest</a></li><li><a href="eightball.html">8 Ball</a></li></ul></noscript>
 <script>
 const $=i=>document.getElementById(i),fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -332,7 +376,7 @@ function renderStats(){
   $('sts').innerHTML=GM.map(g=>`<div class="st"><span>${g.n}</span><div class="bar"><i style="width:${(stats[g.id]||0)/mx*100}%"></i></div><b>${ft(stats[g.id]||0)}</b></div>`).join('');
 }
 $('rs').onclick=()=>{stats={};LS.set('sl-stats',stats);renderStats();toast('آمار پاک شد')};
-document.addEventListener('visibilitychange',()=>{if(document.hidden){if(au)au.suspend()}else{settle();if(au&&musicOn)au.resume()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(au)au.suspend();if(cAud)cAud.pause()}else{settle();if(au&&musicOn&&!cMus)au.resume();if(cAud&&cMus&&musicOn)cAud.play().catch(()=>{})}});
 addEventListener('focus',settle);
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
 const SEC=['games','favorites','friends','ai','support','apps','account','category','settings','creator'];
@@ -372,6 +416,7 @@ function bell(){
   tb=setTimeout(bell,1800+Math.random()*3200);
 }
 function startMusic(){
+  if(cMus){startCustom();return}
   try{
     if(!au){au=new(window.AudioContext||window.webkitAudioContext)();mg=au.createGain();mg.gain.value=mv/100*.9;
       bus=au.createBiquadFilter();bus.type='lowpass';bus.frequency.value=1400;const dl=au.createDelay(1),fb=au.createGain();dl.delayTime.value=.55;fb.gain.value=.38;
@@ -379,11 +424,11 @@ function startMusic(){
     au.resume();clearTimeout(tc);clearTimeout(tb);chord();bell();
   }catch(e){}
 }
-function stopMusic(){clearTimeout(tc);clearTimeout(tb);if(au)au.suspend()}
+function stopMusic(){clearTimeout(tc);clearTimeout(tb);if(au)au.suspend();if(cAud)cAud.pause()}
 function musicBtn(){$('mu').textContent=musicOn&&mv>0?'🔊':'🔇'}
 $('mu').onclick=()=>{musicOn=!musicOn;LS.set('sl-music',musicOn);musicOn?startMusic():stopMusic();musicBtn()};
 addEventListener('pointerdown',()=>{if(musicOn&&!au)startMusic()},{once:true});
-$('mv').oninput=e=>{mv=+e.target.value;LS.set('sl-mv',mv);if(au)mg.gain.setTargetAtTime(mv/100*.9,au.currentTime,.1);musicBtn()};
+$('mv').oninput=e=>{mv=+e.target.value;LS.set('sl-mv',mv);if(au)mg.gain.setTargetAtTime(mv/100*.9,au.currentTime,.1);if(cAud)cAud.volume=mv/100;musicBtn()};
 $('gv').oninput=e=>{gv=+e.target.value;LS.set('sl-gv',gv)};
 function saver(on){
   document.documentElement.classList.toggle('saver',on);
@@ -520,6 +565,10 @@ AI.CAP={'ایران':'تهران','فرانسه':'پاریس','آلمان':'بر
 AI.JOKES=['معلم: ۵ تا سیب داری، ۳ تا را به علی بدهی چند تا می‌ماند؟ شاگرد: ۵ تا! معلم: چرا؟ شاگرد: چون من سیبم را به کسی نمی‌دهم! 😄','چرا برنامه‌نویس‌ها از طبیعت می‌ترسند؟ چون پر از باگ است 🐛','به کامپیوتر گفتم برو استراحت کن. گفت: من که همیشه Sleep هستم، تو بخواب! 😴','یک ریاضی‌دان به رستوران رفت و گفت: یک پیتزا بدهید، ولی آن را به ۸ تکه تقسیم نکنید؛ من نمی‌توانم بیشتر از ۴ تکه بخورم! 🍕','ماهی به ماهی گفت: امروز آب‌وهوا چطور است؟ آن یکی گفت: خیس! 🐟','چرا مداد گریه کرد؟ چون سرش را تراشیدند! ✏️'];
 AI.FACTS=['🌍 زمین ۷۱٪ آب است، ولی کمتر از ۳٪ آن شیرین است.','🐙 هشت‌پا سه قلب دارد.','⚡ رعد و برق چند برابر داغ‌تر از سطح خورشید است.','🍯 عسل هرگز خراب نمی‌شود.','🧠 مغز انسان حدود ۲۰٪ انرژی بدن را مصرف می‌کند.','🐜 مورچه‌ها می‌توانند ۵۰ برابر وزن خودشان را بلند کنند.'];
 AI.KB=[
+{k:['تایمر','کرنومتر','زنگ هشدار','آلارم','ساعت جهانی'],a:'در Apps برنامه‌ی Clock هست: ساعت با تاریخ شمسی و ساعت چند شهر دنیا، تایمر با پیش‌تنظیم، کرنومتر با ثبت دور، و زنگ هشدار (زنگ‌ها فقط وقتی کار می‌کنند که صفحه‌ی سایت باز باشد).'},
+{k:['ضبط صدا','ویس','voice','رکوردر','میکروفن'],a:'در Apps برنامه‌ی Recorder هست: با دکمه‌ی ⏺ ضبط کن، بعد پخش، دانلود یا حذف کن. ضبط‌ها فقط روی همین دستگاه ذخیره می‌شوند و مرورگر اول اجازه‌ی میکروفن را می‌خواهد.'},
+{k:['پس زمینه','بک گراند','عکس زمینه','تصویر زمینه'],a:'در Settings بخش «پس‌زمینه‌ی دلخواه» را باز کن: یکی از رنگ‌ها را بزن یا «انتخاب عکس از گالری» را بزن و با لغزنده تیرگی را تنظیم کن.'},
+{k:['آهنگ دلخواه','موسیقی دلخواه','آهنگ خودم','موزیک دلخواه'],a:'در Settings بخش «آهنگ دلخواه» را باز کن و فایل صوتی (mp3 و مانند آن) را از دستگاهت انتخاب کن. تا بخواهی آهنگ پیش‌فرض را برگردانی، همان آهنگ پخش می‌شود.'},
 {k:['ماشین حساب','کالکولاتور','calculator'],a:'در Apps برنامه‌ی Calculator هست: عدد و عملگر را بزن (+ − × ÷ ^ √ % پرانتز π)، با = جواب را بگیر و از تاریخچه دوباره استفاده کن. در همین چت هم می‌توانی مستقیم بنویسی «۲۵×۴+۱۰».'},
 {k:['نقاشی','paint','پینت'],a:'در Apps برنامه‌ی Paint هست: قلم، پاک‌کن، خط، مستطیل، بیضی و سطل رنگ، با ۱۲ رنگ و رنگ دلخواه، برگشت/جلو و ذخیره به‌صورت PNG.'},
 {k:['تقویم','calendar','شمسی'],a:'در Apps برنامه‌ی Calendar هست: تقویم شمسی با تاریخ میلادی زیر هر روز، تعطیلات ثابت (قمری‌ها نشان داده نمی‌شوند) و امکان نوشتن رویداد برای هر روز.'},
@@ -661,7 +710,7 @@ supRender();
 let notes=LS.get('sl-notes',[]),nCur=null,nQ='',nDelT=0,nTm;
 const NC=['#fff7a8','#ffd1e8','#c9f2e3','#cfe3ff','#e6d6ff'];
 const nSave=()=>LS.set('sl-notes',notes);
-const APPS=['notes-app','calc-app','paint-app','cal-app'];
+const APPS=['notes-app','calc-app','paint-app','cal-app','clock-app','rec-app'];
 function appsHome(){$('apps-home').hidden=false;APPS.forEach(i=>{$(i).hidden=true})}
 function openApp(id){$('apps-home').hidden=true;APPS.forEach(i=>{$(i).hidden=i!==id})}
 function nList(){
@@ -820,6 +869,144 @@ $('app-calc').onclick=()=>{openApp('calc-app');cShow();cHistR()};
 $('app-paint').onclick=()=>{openApp('paint-app');if(!pInit){pInit=true;pBlank()}};
 $('app-cal').onclick=()=>{openApp('cal-app');calToday()};
 $('apps').addEventListener('click',e=>{if(e.target.closest('[data-back]'))appsHome()});
+
+/* ---- storage (IndexedDB) for recordings + custom music ---- */
+const IDB={db:null,
+  open(){return this.db?Promise.resolve(this.db):new Promise((res,rej)=>{const r=indexedDB.open('sloop',1);r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('rec',{keyPath:'id'});d.createObjectStore('kv')};r.onsuccess=()=>{this.db=r.result;res(this.db)};r.onerror=()=>rej(r.error)})},
+  async tx(store,mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction(store,mode),rq=fn(t.objectStore(store));t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
+  put(store,v,k){return this.tx(store,'readwrite',s=>k===undefined?s.put(v):s.put(v,k))},
+  get(store,k){return this.tx(store,'readonly',s=>s.get(k))},
+  del(store,k){return this.tx(store,'readwrite',s=>s.delete(k))},
+  all(store){return this.tx(store,'readonly',s=>s.getAll())}};
+/* ---- custom background ---- */
+let bgImg=LS.get('sl-bg',''),bgDim=LS.get('sl-bgdim',25),bgPre=LS.get('sl-bgpre','');
+const PRE={ocean:'linear-gradient(160deg,#0b3d91,#19b3a6)',sunset:'linear-gradient(160deg,#ff7e5f,#feb47b,#6a3093)',forest:'linear-gradient(160deg,#134e29,#8bc34a)',night:'linear-gradient(160deg,#0f0c29,#302b63,#24243e)'};
+function applyBg(){
+  const b=document.body.style;
+  if(bgImg){b.backgroundImage='linear-gradient(rgba(0,0,0,'+bgDim/100+'),rgba(0,0,0,'+bgDim/100+')),url('+bgImg+')';b.backgroundSize='cover';b.backgroundPosition='center';b.backgroundAttachment='fixed'}
+  else if(bgPre&&PRE[bgPre]){b.backgroundImage=PRE[bgPre];b.backgroundSize='cover';b.backgroundAttachment='fixed'}
+  else{b.backgroundImage='';b.backgroundSize='';b.backgroundPosition='';b.backgroundAttachment=''}
+}
+$('bgp').innerHTML=Object.keys(PRE).map(k=>'<button class="sw2" data-p="'+k+'" style="background:'+PRE[k]+'" aria-label="'+k+'"></button>').join('')+'<button class="sw2" data-p="" style="background:var(--bg1)" aria-label="default"></button>';
+$('bgp').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;bgPre=b.dataset.p;bgImg='';LS.set('sl-bgpre',bgPre);try{localStorage.removeItem('sl-bg')}catch(err){}applyBg()});
+$('bgpick').onclick=()=>$('bgfile').click();
+$('bgfile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{const im=new Image();
+    im.onload=()=>{const k=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      const url=c.toDataURL('image/jpeg',.8);try{localStorage.setItem('sl-bg',JSON.stringify(url))}catch(err){toast('حافظه پر است؛ عکس کوچک‌تری انتخاب کن');return}
+      bgImg=url;bgPre='';LS.set('sl-bgpre','');applyBg();toast('پس‌زمینه تغییر کرد ✓')};
+    im.onerror=()=>toast('این فایل عکس معتبر نیست');im.src=r.result};
+  r.readAsDataURL(f);e.target.value='';
+};
+$('bgrm').onclick=()=>{bgImg='';bgPre='';try{localStorage.removeItem('sl-bg')}catch(e){}LS.set('sl-bgpre','');applyBg();toast('پس‌زمینه‌ی پیش‌فرض برگشت')};
+$('bgdim').value=bgDim;$('bgdim').oninput=e=>{bgDim=+e.target.value;LS.set('sl-bgdim',bgDim);applyBg()};
+applyBg();
+/* ---- custom music ---- */
+let cMus=false,cAud=null,cUrl=null,musName='';
+function musLabel(){$('musname').textContent=cMus?'🎶 '+musName:'آهنگ پیش‌فرض (ساخته‌شده توسط خود سایت)'}
+async function loadMusic(){try{const f=await IDB.get('kv','music');if(f){cMus=true;musName=(await IDB.get('kv','musicName'))||'آهنگ دلخواه'}}catch(e){}musLabel()}
+function dropAud(){if(cAud){cAud.pause();cAud=null}if(cUrl){try{URL.revokeObjectURL(cUrl)}catch(e){}cUrl=null}}
+async function startCustom(){
+  try{const f=await IDB.get('kv','music');if(!f){cMus=false;musLabel();startMusic();return}
+    if(!cAud){cUrl=URL.createObjectURL(f);cAud=new Audio(cUrl);cAud.loop=true}
+    cAud.volume=mv/100;await cAud.play();
+  }catch(e){toast('پخش آهنگ دلخواه ممکن نشد — یک بار روی صفحه بزن')}
+}
+$('mupick').onclick=()=>$('mufile').click();
+$('mufile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  if(f.size>30*1024*1024)return toast('فایل بزرگ‌تر از ۳۰ مگابایت است');
+  try{await IDB.put('kv',f,'music');await IDB.put('kv',f.name,'musicName')}catch(err){return toast('ذخیره‌ی آهنگ ممکن نشد')}
+  dropAud();if(au)au.suspend();clearTimeout(tc);clearTimeout(tb);cMus=true;musName=f.name;musLabel();toast('آهنگ دلخواه ذخیره شد ✓');if(musicOn)startCustom();
+};
+$('murm').onclick=async()=>{try{await IDB.del('kv','music');await IDB.del('kv','musicName')}catch(e){}dropAud();cMus=false;musLabel();toast('آهنگ پیش‌فرض برگشت');if(musicOn)startMusic()};
+loadMusic();
+/* ---- Apps: Clock (clock, timer, stopwatch, alarm) ---- */
+const pad2=n=>String(n).padStart(2,'0'),fmtS=s=>fa(pad2(Math.floor(s/60))+':'+pad2(s%60));
+const CITIES=[['تهران','Asia/Tehran'],['لندن','Europe/London'],['پاریس','Europe/Paris'],['استانبول','Europe/Istanbul'],['دبی','Asia/Dubai'],['نیویورک','America/New_York'],['توکیو','Asia/Tokyo'],['سیدنی','Australia/Sydney']];
+let tmRun=false,tmEnd=0,tmLeft=300,tmTot=300,swRun=false,swAcc=0,swS=0,laps=[],alarms=LS.get('sl-alarms',[]),alFired='',snoozeAt=0,ringI=null,ra=null,cTab='now';
+function ringBeep(){try{[0,.2].forEach(d=>{const o=ra.createOscillator(),g=ra.createGain();o.type='square';o.frequency.value=d?988:784;g.gain.value=.08;o.connect(g);g.connect(ra.destination);o.start(ra.currentTime+d);g.gain.exponentialRampToValueAtTime(.0001,ra.currentTime+d+.16);o.stop(ra.currentTime+d+.17)})}catch(e){}}
+function ringStart(t,s){
+  $('ringt').textContent=t;$('rings').textContent=s||'';$('ring').hidden=false;
+  try{ra=ra||new(window.AudioContext||window.webkitAudioContext)();ra.resume()}catch(e){}
+  ringBeep();clearInterval(ringI);ringI=setInterval(ringBeep,1200);try{navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}catch(e){}
+}
+function ringStop(){clearInterval(ringI);$('ring').hidden=true;try{navigator.vibrate&&navigator.vibrate(0)}catch(e){}}
+$('ringok').onclick=ringStop;$('ringsnz').onclick=()=>{ringStop();snoozeAt=Date.now()+5*60000;toast('۵ دقیقه‌ی دیگر دوباره زنگ می‌زند')};
+function tmRender(){
+  const left=tmRun?Math.max(0,Math.ceil((tmEnd-Date.now())/1000)):tmLeft;
+  $('tmt').textContent=fmtS(left);$('tmc').style.strokeDashoffset=326.7*(1-(tmTot?left/tmTot:0));$('tmgo').textContent=tmRun?'⏸ توقف':'▶ شروع';
+}
+$('tmgo').onclick=()=>{
+  if(tmRun){tmLeft=Math.max(0,Math.ceil((tmEnd-Date.now())/1000));tmRun=false}
+  else{if(tmLeft<=0||tmLeft===tmTot){const s=(+$('tmh').value||0)*3600+(+$('tmm').value||0)*60+(+$('tms').value||0);if(s<=0)return toast('زمان را وارد کن');tmTot=tmLeft=s}tmEnd=Date.now()+tmLeft*1000;tmRun=true}
+  tmRender();
+};
+$('tmrst').onclick=()=>{tmRun=false;const s=(+$('tmh').value||0)*3600+(+$('tmm').value||0)*60+(+$('tms').value||0);tmTot=tmLeft=Math.max(1,s);tmRender()};
+$('tpre').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(!b)return;const s=+b.dataset.s;tmRun=false;tmTot=tmLeft=s;$('tmh').value=Math.floor(s/3600);$('tmm').value=Math.floor(s%3600/60);$('tms').value=s%60;tmRender()});
+const swMs=()=>swAcc+(swRun?Date.now()-swS:0),fmtSW=ms=>fa(pad2(Math.floor(ms/60000))+':'+pad2(Math.floor(ms/1000)%60)).concat('٫').concat(fa(pad2(Math.floor(ms%1000/10))));
+function swRender(){$('swd').textContent=fmtSW(swMs());$('swgo').textContent=swRun?'⏸ توقف':'▶ شروع'}
+$('swgo').onclick=()=>{if(swRun){swAcc+=Date.now()-swS;swRun=false}else{swS=Date.now();swRun=true}swRender()};
+$('swlap').onclick=()=>{if(!swRun&&!swAcc)return;laps.unshift(swMs());swLaps()};
+$('swrst').onclick=()=>{swRun=false;swAcc=0;laps=[];swRender();swLaps()};
+function swLaps(){$('swlaps').innerHTML=laps.map((l,i)=>'<div class="lap"><span>دور '+fa(laps.length-i)+'</span><b>'+fmtSW(l)+'</b></div>').join('')}
+function alRender(){
+  $('allist').innerHTML=alarms.length?alarms.map(a=>'<div class="alr"><div><b style="font-size:1.4rem;direction:ltr;display:block;text-align:right">'+fa(a.t)+'</b><small style="color:var(--muted)">'+esc(a.l||'زنگ')+'</small></div><div style="display:flex;gap:10px;align-items:center"><label class="sw"><input type="checkbox" data-at="'+a.id+'"'+(a.on?' checked':'')+' aria-label="روشن/خاموش"><span></span></label><button data-ad="'+a.id+'" aria-label="حذف" style="border:0;background:none;color:#e53935;font-size:1.3rem;cursor:pointer">×</button></div></div>').join(''):'<p class="sub" style="margin:8px 0 0">زنگی نداری.</p>';
+}
+$('aladd').onclick=()=>{const t=$('alt').value;if(!t)return toast('زمان را انتخاب کن');alarms.push({id:Date.now(),t,l:$('alb').value.trim(),on:true});LS.set('sl-alarms',alarms);$('alb').value='';alRender();toast('زنگ تنظیم شد ⏰')};
+$('allist').addEventListener('click',e=>{const d=e.target.closest('[data-ad]');if(d){alarms=alarms.filter(a=>a.id!==+d.dataset.ad);LS.set('sl-alarms',alarms);alRender()}});
+$('allist').addEventListener('change',e=>{const c=e.target.closest('[data-at]');if(c){const a=alarms.find(x=>x.id===+c.dataset.at);if(a){a.on=c.checked;LS.set('sl-alarms',alarms)}}});
+$('ctabs').addEventListener('click',e=>{const b=e.target.closest('[data-tb]');if(!b)return;cTab=b.dataset.tb;$('ctabs').querySelectorAll('button').forEach(x2=>x2.classList.toggle('on',x2===b));['now','timer','sw','alarm'].forEach(t=>{$('tb-'+t).hidden=t!==cTab});if(cTab==='alarm')alRender();if(cTab==='timer')tmRender();if(cTab==='sw')swRender()});
+function clockTick(){
+  const now=new Date();
+  if(tmRun&&tmEnd-Date.now()<=0){tmRun=false;tmLeft=0;ringStart('⏳ تایمر تمام شد','');tmRender()}
+  const hm=pad2(now.getHours())+':'+pad2(now.getMinutes());
+  alarms.forEach(a=>{const k=now.toDateString()+hm+a.id;if(a.on&&a.t===hm&&alFired!==k){alFired=k;ringStart('⏰ '+(a.l||'زنگ هشدار'),fa(hm))}});
+  if(snoozeAt&&Date.now()>=snoozeAt){snoozeAt=0;ringStart('⏰ یادآوری مجدد','')}
+  if($('apps').hidden||$('clock-app').hidden)return;
+  if(cTab==='now'){
+    $('cl-time').textContent=fa(pad2(now.getHours())+':'+pad2(now.getMinutes())+':'+pad2(now.getSeconds()));
+    const j=AI.toJ(now.getFullYear(),now.getMonth()+1,now.getDate());$('cl-date').textContent=AI.W[now.getDay()]+' '+fa(j[2])+' '+AI.J[j[1]-1]+' '+fa(j[0]);
+    $('cl-world').innerHTML=CITIES.map(([n,z])=>{let s='—';try{s=new Intl.DateTimeFormat('en-GB',{timeZone:z,hour:'2-digit',minute:'2-digit',hour12:false}).format(now)}catch(e){}return '<div class="wc"><span>'+n+'</span><b>'+fa(s)+'</b></div>'}).join('');
+  }
+  else if(cTab==='timer')tmRender();else if(cTab==='sw'&&swRun)swRender();
+}
+setInterval(clockTick,250);
+$('app-clock').onclick=()=>{openApp('clock-app');clockTick();tmRender();swRender()};
+/* ---- Apps: Voice recorder ---- */
+let rMR=null,rStream=null,rChunks=[],rT0=0,rDur=0,rTm=null,rAn=null,rCtx=null,rUrls=[];
+function meter(){
+  const c=$('rlvl'),g=c.getContext('2d'),a=new Uint8Array(rAn.frequencyBinCount);
+  (function f(){if(!rMR||rMR.state==='inactive'){g.clearRect(0,0,c.width,c.height);return}
+    rAn.getByteTimeDomainData(a);let m=0;a.forEach(v=>{m=Math.max(m,Math.abs(v-128))});g.clearRect(0,0,c.width,c.height);g.fillStyle='rgba(127,127,127,.25)';g.fillRect(0,12,c.width,16);g.fillStyle='#e53935';g.fillRect(0,12,c.width*Math.min(1,m/80),16);requestAnimationFrame(f)})();
+}
+const recExt=t=>/webm/.test(t)?'webm':/ogg/.test(t)?'ogg':/mp4|aac/.test(t)?'m4a':/mpeg|mp3/.test(t)?'mp3':'audio';
+async function rList(){
+  rUrls.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});rUrls=[];let L=[];
+  try{L=(await IDB.all('rec'))||[]}catch(e){$('rlist').innerHTML='<p class="sub" style="margin:8px 0 0">ذخیره‌سازی در این مرورگر در دسترس نیست.</p>';return}
+  L.sort((a,b)=>b.ts-a.ts);
+  $('rlist').innerHTML=L.length?L.map(r=>{const u=URL.createObjectURL(r.blob);rUrls.push(u);return '<div class="rcr"><div><b>'+esc(r.name)+'</b><small style="color:var(--muted);display:block">'+fmtS(r.dur||0)+'</small></div><div style="display:flex;gap:8px"><a class="al" style="text-decoration:none;color:var(--ink);padding:4px 10px;border:1px solid var(--line);border-radius:8px" href="'+u+'" download="'+esc(r.name.replace(/[^\w\u0600-\u06ff-]+/g,'_'))+'.'+recExt(r.blob.type||'')+'">⬇</a><button class="al" data-rd="'+r.id+'" aria-label="حذف">🗑</button></div><audio controls preload="none" src="'+u+'"></audio></div>'}).join(''):'<p class="sub" style="margin:8px 0 0">هنوز ضبطی نداری.</p>';
+}
+async function rToggle(){
+  if(rMR&&rMR.state!=='inactive'){rMR.stop();return}
+  if(!navigator.mediaDevices||!window.MediaRecorder){$('rmsg').textContent='ضبط صدا در این مرورگر پشتیبانی نمی‌شود.';return toast('ضبط صدا پشتیبانی نمی‌شود')}
+  try{rStream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){$('rmsg').textContent='دسترسی به میکروفن داده نشد. در تنظیمات مرورگر اجازه بده.';return toast('دسترسی به میکروفن داده نشد')}
+  rChunks=[];rMR=new MediaRecorder(rStream);
+  rMR.ondataavailable=e=>{if(e.data&&e.data.size)rChunks.push(e.data)};
+  rMR.onstop=async()=>{
+    clearInterval(rTm);$('rrec').textContent='⏺ شروع ضبط';try{rCtx&&rCtx.close()}catch(e){}rStream.getTracks().forEach(t=>t.stop());
+    const blob=new Blob(rChunks,{type:rMR.mimeType||'audio/webm'}),n=new Date();
+    try{await IDB.put('rec',{id:Date.now(),name:'ضبط '+fa(n.toLocaleDateString('en-CA')+' '+pad2(n.getHours())+':'+pad2(n.getMinutes())),ts:Date.now(),dur:rDur,blob});$('rmsg').textContent='ضبط ذخیره شد ✓';toast('ضبط ذخیره شد ✓')}catch(e){$('rmsg').textContent='ذخیره‌سازی ممکن نشد.'}
+    rList();
+  };
+  rMR.start(250);rT0=Date.now();rDur=0;$('rrec').textContent='⏹ توقف';$('rmsg').textContent='در حال ضبط…';
+  rTm=setInterval(()=>{rDur=Math.floor((Date.now()-rT0)/1000);$('rtime').textContent=fmtS(rDur)},250);
+  try{rCtx=new(window.AudioContext||window.webkitAudioContext)();const src=rCtx.createMediaStreamSource(rStream);rAn=rCtx.createAnalyser();rAn.fftSize=256;src.connect(rAn);meter()}catch(e){}
+}
+$('rrec').onclick=rToggle;
+$('rlist').addEventListener('click',async e=>{const d=e.target.closest('[data-rd]');if(d){try{await IDB.del('rec',+d.dataset.rd)}catch(err){}rList();toast('ضبط حذف شد')}});
+$('app-rec').onclick=()=>{openApp('rec-app');rList()};
 renderProfile();renderStats();musicBtn();renderTime();go('games');settle();renderFriends();renderQR();try{const ad=new URLSearchParams(location.search).get('add');if(ad)handleInvite(String(location.href))}catch(e){}
 if(musicOn)toast('🎵 برای شروع موسیقی یک بار روی صفحه بزن');
 </script>
