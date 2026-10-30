@@ -1,12 +1,10 @@
-const CACHE_NAME = "s-loop-v1";
+const CACHE_NAME = "s-loop-v2";
 const APP_ROOT = "/sherinv.github.io/";
 const CORE_FILES = [
   APP_ROOT,
   APP_ROOT + "index.html",
   APP_ROOT + "manifest.webmanifest",
-  APP_ROOT + "icons/icon-192.png",
-  APP_ROOT + "icons/icon-512.png",
-  APP_ROOT + "icons/icon-maskable-512.png"
+  APP_ROOT + "icon.png"
 ];
 
 self.addEventListener("install", (event) => {
