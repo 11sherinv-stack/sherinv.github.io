@@ -7,7 +7,15 @@
 <meta name="description" content="S loop — مجموعه‌ی بازی‌های آنلاین رایگان: مار، تتریس، ۲۰۴۸، دایناسور، سودوکو، ماز و بیشتر، با موسیقی آرام و ظاهر گرامافونی.">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website"><meta property="og:title" content="S loop — بازی‌های آنلاین"><meta property="og:description" content="مجموعه‌ی بازی‌های آنلاین رایگان با ظاهر گرامافونی">
-<link rel="canonical" href="https://inv-stack.github.io/">
+<link rel="canonical" href="https://11sherinv-stack.github.io/sherinv.github.io/">
+<meta name="theme-color" content="#586a2b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="S Loop">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <style>
 :root{--bg1:#e4edb9;--bg2:#bdf0e6;--ink:#26301a;--muted:#5d6a45;--card:rgba(255,255,255,.62);--line:rgba(60,80,30,.25);--field:rgba(255,255,255,.75);--head:#586a2b;--lime:#d9f24a;--tq:#14a89b;--btn:#14a89b;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#162011;--bg2:#0b2624;--ink:#e9f3cc;--muted:#a9b98a;--card:rgba(255,255,255,.07);--line:rgba(217,242,74,.22);--field:rgba(255,255,255,.08);--head:#222d12;--tq:#2fd5c3;--btn:#2fd5c3;--btnink:#08201d}}
@@ -1009,6 +1017,15 @@ $('rlist').addEventListener('click',async e=>{const d=e.target.closest('[data-rd
 $('app-rec').onclick=()=>{openApp('rec-app');rList()};
 renderProfile();renderStats();musicBtn();renderTime();go('games');settle();renderFriends();renderQR();try{const ad=new URLSearchParams(location.search).get('add');if(ad)handleInvite(String(location.href))}catch(e){}
 if(musicOn)toast('🎵 برای شروع موسیقی یک بار روی صفحه بزن');
+</script>
+<script>
+// Register the S Loop service worker for the GitHub Pages subpath.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .catch(error => console.error('S Loop service worker registration failed:', error));
+  });
+}
 </script>
 </body>
 </html>
