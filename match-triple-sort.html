@@ -12,4 +12,4 @@ const symbols=['🍓','🍋','🍇','🍒','🍉','🥝'];let tiles=[],selected=
 function reset(){tiles=Array.from({length:24},()=>symbols[Math.floor(Math.random()*symbols.length)]);selected=[];score=0;draw()}
 function draw(){let g=document.getElementById('grid');g.innerHTML='';tiles.forEach((t,i)=>{if(!t)return;let b=document.createElement('button');b.className='tile'+(selected.includes(i)?' selected':'');b.textContent=t;b.onclick=()=>{if(selected.includes(i))return;selected.push(i);if(selected.length===3){let vals=selected.map(j=>tiles[j]);if(vals.every(v=>v===vals[0])){selected.forEach(j=>tiles[j]='');score+=3}selected=[]}draw()};g.append(b)});document.getElementById('info').textContent=`امتیاز: ${score} | سه میوه یکسان را انتخاب کن.`}
 reset();
-</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>
+</script><div class="actions"><button onclick="location.href='../index.html'">بازگشت به S Loop</button></div></main></body></html>

@@ -10,4 +10,4 @@ h1{font-size:1.4rem}button{cursor:pointer;font:inherit}#info{min-height:32px;mar
 <script>
 let count=30,popped=0;function reset(){popped=0;draw()}function draw(){let g=document.getElementById('grid');g.innerHTML='';for(let i=0;i<count;i++){let b=document.createElement('button');b.className='bubble';b.setAttribute('aria-label','حباب');b.onclick=()=>{if(b.classList.contains('popped'))return;b.classList.add('popped');popped++;document.getElementById('info').textContent=popped===count?'همه حباب‌ها ترکیدند! عالی بود.':`${popped} از ${count} حباب`;};g.append(b)}document.getElementById('info').textContent=`حباب‌ها را لمس کن: ${popped}/${count}`}
 reset();
-</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>
+</script><div class="actions"><button onclick="location.href='../index.html'">بازگشت به S Loop</button></div></main></body></html>

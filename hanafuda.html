@@ -12,4 +12,4 @@ const flowers=['🌸','🌺','🌼','🌻','🍁','🌾','🌿','🌷','🌹','�
 function reset(){deck=flowers.flatMap((x,i)=>[{x,m:i},{x,m:i}]).sort(()=>Math.random()-.5);open=[];matched=tries=0;lock=false;draw()}
 function draw(){let g=document.getElementById('grid');g.innerHTML='';deck.forEach((c,i)=>{let b=document.createElement('button');b.className='card';b.textContent=c.done?c.x:open.includes(i)?c.x:'🎴';b.disabled=!!c.done||lock;b.onclick=()=>{if(open.length>=2||open.includes(i)||c.done)return;open.push(i);draw();if(open.length===2){tries++;lock=true;setTimeout(()=>{let [a,z]=open;if(deck[a].m===deck[z].m){deck[a].done=deck[z].done=true;matched++}open=[];lock=false;draw()},650)}};g.append(b)});document.getElementById('info').textContent=`جفت‌ها: ${matched}/12 | تلاش‌ها: ${tries}${matched===12?' — برنده شدی!':''}`}
 reset();
-</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>
+</script><div class="actions"><button onclick="location.href='../index.html'">بازگشت به S Loop</button></div></main></body></html>
