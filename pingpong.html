@@ -1,0 +1,18 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ping-Pong | S Loop</title><style>
+*{box-sizing:border-box}body{margin:0;padding:18px;background:#e8e8e8;color:#171717;font-family:system-ui,sans-serif;text-align:center}
+main{max-width:650px;margin:auto;background:white;border-radius:18px;padding:16px;box-shadow:0 8px 28px #0002}
+h1{font-size:1.4rem}button{cursor:pointer;font:inherit}#info{min-height:32px;margin:12px;color:#444}
+.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
+.actions button{border:0;border-radius:10px;padding:10px 16px;background:#171717;color:white}
+</style></head><body><main><h1>Ping-Pong</h1>
+<style>.canvas{width:100%;max-width:420px;height:auto;background:#247c70;border:3px solid white;border-radius:12px;touch-action:none}.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.controls button{padding:14px 3px;border:0;border-radius:10px;background:#171717;color:white}</style>
+<div id="info">بازیکن چپ: 0 — 0 :بازیکن راست</div><canvas class="canvas" id="c" width="420" height="560"></canvas><div class="controls"><button id="lu">▲ چپ</button><button id="ld">▼ چپ</button><button id="ru">▲ راست</button><button id="rd">▼ راست</button></div><p>دکمه‌ها را نگه دار. در رایانه از W/S و کلیدهای بالا/پایین استفاده کن.</p><div class="actions"><button onclick="restart()">شروع دوباره</button></div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');let y1,y2,ball,s1,s2,keys={},raf;
+function restart(){y1=y2=230;ball={x:210,y:280,vx:3,vy:2.5};s1=s2=0}
+function bind(id,k){let e=document.getElementById(id);e.onpointerdown=x=>{x.preventDefault();keys[k]=true};['pointerup','pointerleave','pointercancel'].forEach(t=>e.addEventListener(t,()=>keys[k]=false))}
+bind('lu','w');bind('ld','s');bind('ru','up');bind('rd','down');
+window.onkeydown=e=>keys[e.key.toLowerCase()]=true;window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
+function frame(){ctx.clearRect(0,0,420,560);if(keys.w)y1=Math.max(0,y1-5);if(keys.s)y1=Math.min(480,y1+5);if(keys.up)y2=Math.max(0,y2-5);if(keys.down)y2=Math.min(480,y2+5);ball.x+=ball.vx;ball.y+=ball.vy;if(ball.y<8||ball.y>552)ball.vy*=-1;if(ball.x<32&&ball.x>20&&ball.y>y1-12&&ball.y<y1+92)ball.vx=Math.abs(ball.vx)*1.04;if(ball.x>388&&ball.x<400&&ball.y>y2-12&&ball.y<y2+92)ball.vx=-Math.abs(ball.vx)*1.04;if(ball.x<0){s2++;ball={x:210,y:280,vx:3,vy:2}}if(ball.x>420){s1++;ball={x:210,y:280,vx:-3,vy:-2}}ctx.fillStyle='#fff';ctx.fillRect(12,y1,12,80);ctx.fillRect(396,y2,12,80);ctx.beginPath();ctx.arc(ball.x,ball.y,9,0,Math.PI*2);ctx.fill();document.getElementById('info').textContent=`بازیکن چپ: ${s1} — ${s2} :بازیکن راست`;raf=requestAnimationFrame(frame)}
+restart();frame();
+</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>

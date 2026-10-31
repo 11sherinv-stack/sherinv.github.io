@@ -1,0 +1,17 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reversi | S Loop</title><style>
+*{box-sizing:border-box}body{margin:0;padding:18px;background:#e8e8e8;color:#171717;font-family:system-ui,sans-serif;text-align:center}
+main{max-width:650px;margin:auto;background:white;border-radius:18px;padding:16px;box-shadow:0 8px 28px #0002}
+h1{font-size:1.4rem}button{cursor:pointer;font:inherit}#info{min-height:32px;margin:12px;color:#444}
+.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
+.actions button{border:0;border-radius:10px;padding:10px 16px;background:#171717;color:white}
+</style></head><body><main><h1>Reversi</h1>
+<style>.board{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;background:#176b49;padding:6px;max-width:440px;margin:auto;border-radius:10px}.cell{aspect-ratio:1;border:0;border-radius:4px;background:#26885e;display:grid;place-items:center}.piece{width:82%;height:82%;border-radius:50%;box-shadow:inset 0 2px 4px #fff5,0 2px 3px #0005}</style>
+<div id="info"></div><div class="board" id="board"></div><div class="actions"><button onclick="reset()">شروع دوباره</button></div>
+<script>
+let board,turn,ended;const dirs=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function reset(){board=Array(64).fill(0);board[27]=2;board[28]=1;board[35]=1;board[36]=2;turn=1;ended=false;draw()}
+function flips(i,p){let out=[],r0=i>>3,c0=i%8;for(let [dr,dc] of dirs){let r=r0+dr,c=c0+dc,line=[];while(r>=0&&r<8&&c>=0&&c<8&&board[r*8+c]===3-p){line.push(r*8+c);r+=dr;c+=dc}if(line.length&&r>=0&&r<8&&c>=0&&c<8&&board[r*8+c]===p)out.push(...line)}return [...new Set(out)]}
+function legal(p){return board.map((v,i)=>v===0&&flips(i,p).length?i:-1).filter(i=>i>=0)}
+function draw(){let g=document.getElementById('board');g.innerHTML='';let moves=legal(turn);board.forEach((v,i)=>{let b=document.createElement('button');b.className='cell';if(v){let q=document.createElement('i');q.className='piece';q.style.background=v===1?'#fff':'#171717';b.append(q)}else if(moves.includes(i)){b.textContent='•';b.style.color='#eaff70'}b.onclick=()=>{if(ended||!moves.includes(i))return;board[i]=turn;flips(i,turn).forEach(j=>board[j]=turn);turn=3-turn;if(!legal(turn).length){turn=3-turn;if(!legal(turn).length)ended=true}draw()};g.append(b)});let a=board.filter(x=>x===1).length,b=board.filter(x=>x===2).length;document.getElementById('info').textContent=ended?`پایان بازی! سفید ${a} - سیاه ${b}`:`نوبت ${turn===1?'سفید':'سیاه'} | سفید ${a} - سیاه ${b}`}
+reset();
+</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>

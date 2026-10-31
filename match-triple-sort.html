@@ -1,0 +1,15 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Match Triple Sort | S Loop</title><style>
+*{box-sizing:border-box}body{margin:0;padding:18px;background:#e8e8e8;color:#171717;font-family:system-ui,sans-serif;text-align:center}
+main{max-width:650px;margin:auto;background:white;border-radius:18px;padding:16px;box-shadow:0 8px 28px #0002}
+h1{font-size:1.4rem}button{cursor:pointer;font:inherit}#info{min-height:32px;margin:12px;color:#444}
+.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
+.actions button{border:0;border-radius:10px;padding:10px 16px;background:#171717;color:white}
+</style></head><body><main><h1>Match Triple Sort</h1>
+<style>.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.tile{min-height:75px;border:1px solid #bbb;border-radius:12px;background:#eee;font-size:1.8rem}.selected{outline:3px solid #159c90}</style>
+<div id="info"></div><div class="grid" id="grid"></div><div class="actions"><button onclick="reset()">چیدمان جدید</button></div>
+<script>
+const symbols=['🍓','🍋','🍇','🍒','🍉','🥝'];let tiles=[],selected=[],score=0;
+function reset(){tiles=Array.from({length:24},()=>symbols[Math.floor(Math.random()*symbols.length)]);selected=[];score=0;draw()}
+function draw(){let g=document.getElementById('grid');g.innerHTML='';tiles.forEach((t,i)=>{if(!t)return;let b=document.createElement('button');b.className='tile'+(selected.includes(i)?' selected':'');b.textContent=t;b.onclick=()=>{if(selected.includes(i))return;selected.push(i);if(selected.length===3){let vals=selected.map(j=>tiles[j]);if(vals.every(v=>v===vals[0])){selected.forEach(j=>tiles[j]='');score+=3}selected=[]}draw()};g.append(b)});document.getElementById('info').textContent=`امتیاز: ${score} | سه میوه یکسان را انتخاب کن.`}
+reset();
+</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>

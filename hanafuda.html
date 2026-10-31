@@ -1,0 +1,15 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hanafuda — جفت‌یابی | S Loop</title><style>
+*{box-sizing:border-box}body{margin:0;padding:18px;background:#e8e8e8;color:#171717;font-family:system-ui,sans-serif;text-align:center}
+main{max-width:650px;margin:auto;background:white;border-radius:18px;padding:16px;box-shadow:0 8px 28px #0002}
+h1{font-size:1.4rem}button{cursor:pointer;font:inherit}#info{min-height:32px;margin:12px;color:#444}
+.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
+.actions button{border:0;border-radius:10px;padding:10px 16px;background:#171717;color:white}
+</style></head><body><main><h1>Hanafuda — جفت‌یابی</h1>
+<style>.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.card{min-height:95px;border:2px solid #b98a4b;border-radius:10px;background:#fff4d7;color:#442b12;font-size:1.8rem}</style>
+<div id="info"></div><div class="grid" id="grid"></div><div class="actions"><button onclick="reset()">بازی جدید</button></div>
+<script>
+const flowers=['🌸','🌺','🌼','🌻','🍁','🌾','🌿','🌷','🌹','🍂','🎋','🌙'];let deck=[],open=[],matched=0,tries=0,lock=false;
+function reset(){deck=flowers.flatMap((x,i)=>[{x,m:i},{x,m:i}]).sort(()=>Math.random()-.5);open=[];matched=tries=0;lock=false;draw()}
+function draw(){let g=document.getElementById('grid');g.innerHTML='';deck.forEach((c,i)=>{let b=document.createElement('button');b.className='card';b.textContent=c.done?c.x:open.includes(i)?c.x:'🎴';b.disabled=!!c.done||lock;b.onclick=()=>{if(open.length>=2||open.includes(i)||c.done)return;open.push(i);draw();if(open.length===2){tries++;lock=true;setTimeout(()=>{let [a,z]=open;if(deck[a].m===deck[z].m){deck[a].done=deck[z].done=true;matched++}open=[];lock=false;draw()},650)}};g.append(b)});document.getElementById('info').textContent=`جفت‌ها: ${matched}/12 | تلاش‌ها: ${tries}${matched===12?' — برنده شدی!':''}`}
+reset();
+</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>

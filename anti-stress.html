@@ -1,0 +1,13 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Anti Stress Game | S Loop</title><style>
+*{box-sizing:border-box}body{margin:0;padding:18px;background:#e8e8e8;color:#171717;font-family:system-ui,sans-serif;text-align:center}
+main{max-width:650px;margin:auto;background:white;border-radius:18px;padding:16px;box-shadow:0 8px 28px #0002}
+h1{font-size:1.4rem}button{cursor:pointer;font:inherit}#info{min-height:32px;margin:12px;color:#444}
+.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
+.actions button{border:0;border-radius:10px;padding:10px 16px;background:#171717;color:white}
+</style></head><body><main><h1>Anti Stress Game</h1>
+<style>.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}.bubble{aspect-ratio:1;border:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#8bded3 45%,#159c90 80%);box-shadow:inset -5px -6px 10px #006b6255,0 3px 5px #0003}.bubble.popped{visibility:hidden}</style>
+<div id="info"></div><div class="grid" id="grid"></div><div class="actions"><button onclick="reset()">شروع دوباره</button></div>
+<script>
+let count=30,popped=0;function reset(){popped=0;draw()}function draw(){let g=document.getElementById('grid');g.innerHTML='';for(let i=0;i<count;i++){let b=document.createElement('button');b.className='bubble';b.setAttribute('aria-label','حباب');b.onclick=()=>{if(b.classList.contains('popped'))return;b.classList.add('popped');popped++;document.getElementById('info').textContent=popped===count?'همه حباب‌ها ترکیدند! عالی بود.':`${popped} از ${count} حباب`;};g.append(b)}document.getElementById('info').textContent=`حباب‌ها را لمس کن: ${popped}/${count}`}
+reset();
+</script><div class="actions"><button onclick="location.href='index.html'">بازگشت به S Loop</button></div></main></body></html>
